@@ -10,15 +10,20 @@ logger = logging.getLogger("model_builder")
 ######################
 ### DEFAULT VALUES ###
 ######################
-
 # TODO Cite these accordingly (maybe in readme?)
-
-ENERGY_PRICE = 0.1665 # €/kWh
+PRODUCER_ENERGY_PRICE = 0.1665 # €/kWh
 # value for 2024 taken from
 # https://www.bdew.de/service/daten-und-grafiken/bdew-strompreisanalyse/
 # https://de.statista.com/statistik/daten/studie/252029/umfrage/industriestrompreise-inkl-stromsteuer-in-deutschland/
 
-PV_MODULE_LIFETIME = 30
+GRID_CAPACITY_PRICE_OVER_2500H = 101.22
+GRID_CAPACITY_PRICE_UNDER_2500H = 17.78
+GRID_ENERGY_PRICE_OVER_2500H = 0.0127
+GRID_ENERGY_PRICE_UNDER_2500H = 0.0460
+# mean updated with historical inflation of cumulative 26,24% from
+# https://zenodo.org/records/13734730
+
+PV_SYSTEM_LIFETIME = 30
 # taken from https://www.mdpi.com/1996-1073/14/14/4278
 
 INVERTER_LIFETIME = 15
@@ -27,17 +32,26 @@ INVERTER_LIFETIME = 15
 STORAGE_LIFETIME = 15
 # taken from "Energiespeicher - Bedarf, Technologien, Integration", Stadler Sterner 2017
 
-# TODO research these missing values accordingly
-GRID_CAPACITY_PRICE = "XXX"
-GRID_ENERGY_PRICE = "XXX"
-STORAGE_COST_PER_KWH = "XXX"
-PV_MODULE_COST_PER_KWH = "XXX"
-INVERTER_COST_PER_KW = "XXX"
-STORAGE_CHARGE_EFFICIENCY = "XXX"
-STORAGE_DISCHARGE_EFFICIENCY = "XXX"
-STORAGE_CHARGE_RATE = "XXX"
-STORAGE_DISCHARGE_RATE = "XXX"
+STORAGE_COST_PER_KWH = 145
+# taken from https://www.pem.rwth-aachen.de/cms/pem/der-lehrstuhl/presse-medien/aktuelle-meldungen/~bexlow/battery-monitor-2023-nachfrage-waechst/
 
+STORAGE_CHARGE_EFFICIENCY = 0.9
+STORAGE_DISCHARGE_EFFICIENCY = 0.9
+# for round trip efficiency of 0.81
+# taken from https://www.sciencedirect.com/science/article/pii/S2352152X23027846
+
+STORAGE_CHARGE_RATE = 1
+STORAGE_DISCHARGE_RATE = 1
+# taken from https://www.sciencedirect.com/science/article/pii/S2590116819300116
+
+INVERTER_EFFICIENCY = 0.95
+# taken from https://www.sciencedirect.com/science/article/pii/S1364032116306712
+
+INVERTER_COST_PER_KW = 180
+# https://www.sciencedirect.com/science/article/pii/S1876610216310736
+
+PV_SYSTEM_COST_PER_KWP = 1250
+# taken from https://www.ise.fraunhofer.de/de/veroeffentlichungen/studien/studie-stromgestehungskosten-erneuerbare-energien.html
 
 class LoadProfileAnalyzer:
 
@@ -46,46 +60,74 @@ class LoadProfileAnalyzer:
             consumption_timeseries: pd.Series | np.array | list[float],
             hours_per_timestep: float = 0.25,
             interest_rate: float = 0.03,
-            grid_capacity_price: float = GRID_CAPACITY_PRICE,
-            grid_energy_price: float = GRID_ENERGY_PRICE,
-            producer_energy_price: float = ENERGY_PRICE,
-            storage_cost_per_kwh: float = STORAGE_COST_PER_KWH,
-            storage_lifetime: int = STORAGE_LIFETIME,
-            storage_charge_efficiency: float = STORAGE_CHARGE_EFFICIENCY,
-            storage_discharge_efficiency: float = STORAGE_DISCHARGE_EFFICIENCY,
-            storage_charge_rate: float = STORAGE_CHARGE_RATE,
-            storage_discharge_rate: float = STORAGE_DISCHARGE_RATE,
+            grid_capacity_price_over_2500h: float = 101.22,
+            grid_capacity_price_under_2500h: float = 17.78,
+            grid_energy_price_over_2500h: float = 0.0127,
+            grid_energy_price_under_2500h: float = 0.0460,
+            producer_energy_price: float = 0.1665,
+            storage_cost_per_kwh: float = 145,
+            storage_lifetime: int = 15,
+            storage_charge_efficiency: float = 0.9,
+            storage_discharge_efficiency: float = 0.9,
+            storage_charge_rate: float = 1,
+            storage_discharge_rate: float = 1,
             max_storage_size_kwh: float | None = None,
-            pv_module_cost_per_kwp: float = PV_MODULE_COST_PER_KWH,
+            pv_system_cost_per_kwp: float = 900,
             max_pv_system_size_kwp: float | None = None,
-            pv_module_lifetime: int = PV_MODULE_LIFETIME,
-            inverter_cost_per_kw: float = INVERTER_COST_PER_KW,
-            inverter_lifetime: int = INVERTER_LIFETIME,
+            pv_system_lifetime: int = 30,
+            inverter_cost_per_kw: float = 180,
+            inverter_lifetime: int = 15,
+            inverter_efficiency: float = 0.95,
             log_level = 2) -> None:
 
         self.consumption_timeseries = consumption_timeseries
         self.hours_per_timestep = hours_per_timestep
+
         self.interest_rate = interest_rate
-        self.grid_capacity_price = grid_capacity_price
-        self.grid_energy_price = grid_energy_price
+
+        self.grid_capacity_price_over_2500h = grid_capacity_price_over_2500h
+        self.grid_capacity_price_under_2500h = grid_capacity_price_under_2500h
+        self.grid_energy_price_over_2500h = grid_energy_price_over_2500h
+        self.grid_energy_price_under_2500h = grid_energy_price_under_2500h
         self.producer_energy_price = producer_energy_price
+
         self.storage_cost_per_kwh = storage_cost_per_kwh
         self.max_storage_size_kwh = max_storage_size_kwh
-        self.pv_module_cost_per_kwp = pv_module_cost_per_kwp
-        self.max_pv_system_size_kwp = max_pv_system_size_kwp
-        self.inverter_cost_per_kw = inverter_cost_per_kw
-        self.pv_module_lifetime = pv_module_lifetime
-        self.inverter_lifetime = inverter_lifetime
         self.storage_lifetime = storage_lifetime
         self.storage_charge_efficiency = storage_charge_efficiency
         self.storage_discharge_eifficiency = storage_discharge_efficiency
         self.storage_charge_rate = storage_charge_rate
         self.storage_discharge_rate = storage_discharge_rate
-        self.log_level = log_level
 
+        self.inverter_lifetime = inverter_lifetime
+        self.inverter_cost_per_kw = inverter_cost_per_kw
+        self.inverter_efficiency = inverter_efficiency
+
+        self.pv_system_cost_per_kw = pv_system_cost_per_kwp
+        self.max_pv_system_size_kwp = max_pv_system_size_kwp
+        self.pv_system_lifetime = pv_system_lifetime
+
+        self.log_level = log_level
         self.n_of_ts = len(consumption_timeseries)
 
         self.create_esm()
+        self.calc_flh()
+        self.set_capacity_energy_price()
+
+
+    def calc_flh(self):
+
+        self.flh = sum(self.consumption_timeseries) / max(self.consumption_timeseries)
+
+
+    def set_capacity_energy_price(self):
+        if self.flh > 2500:
+            self.grid_capacity_price = self.grid_capacity_price_over_2500h
+            self.grid_energy_price = self.grid_energy_price_over_2500h
+
+        else:
+            self.grid_capacity_price = self.grid_capacity_price_under_2500h
+            self.grid_energy_price = self.grid_energy_price_under_2500h
 
 
     def create_esm(self):
@@ -172,10 +214,10 @@ class LoadProfileAnalyzer:
                 hasCapacityVariable=True,
                 operationRateMax=solar_df,
                 capacityMax=self.max_pv_system_size_kwp,
-                investPerCapacity=self.pv_module_cost_per_kwp,
+                investPerCapacity=self.pv_system_cost_per_kw,
                 interestRate=self.interest_rate,
-                economicLifetime=PV_MODULE_LIFETIME,
-                technicalLifetime=PV_MODULE_LIFETIME))
+                economicLifetime=self.pv_system_lifetime,
+                technicalLifetime=self.pv_system_lifetime))
 
 
     def add_storage(self):
@@ -186,7 +228,7 @@ class LoadProfileAnalyzer:
                 esM=self.esm,
                 name="to_storage",
                 physicalUnit="kWh",
-                commodityConversionFactors={'energy': -1, 'stored_energy': 1},
+                commodityConversionFactors={'energy': -1, 'stored_energy': self.inverter_efficiency},
                 hasCapacityVariable=True,
                 investPerCapacity=0,
                 linkedConversionCapacityID="storage",
