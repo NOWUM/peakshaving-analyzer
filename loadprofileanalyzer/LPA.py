@@ -1,0 +1,251 @@
+import logging
+
+import fine as fn
+import numpy as np
+import pandas as pd
+
+from loadprofileanalyzer import Config
+
+logger = logging.getLogger("model_builder")
+
+
+class LoadProfileAnalyzer:
+
+    def __init__(
+            self,
+            config: Config,
+            ) -> None:
+
+        self.consumption_timeseries = config.consumption_timeseries
+        self.hours_per_timestep = config.hours_per_timestep
+        self.number_of_timesteps = config.number_of_timesteps
+        self.add_stor = config.add_stor
+        self.add_sol = config.add_sol
+        self.auto_opt = config.auto_opt
+
+        self.interest_rate = config.interest_rate
+
+        self.grid_capacity_price = config.grid_capacity_price
+        self.grid_energy_price = config.grid_energy_price
+        self.producer_energy_price = config.producer_energy_price
+
+        self.storage_cost_per_kwh = config.storage_cost_per_kwh
+        self.storage_lifetime = config.storage_lifetime
+        self.storage_charge_efficiency = config.storage_charge_efficiency
+        self.storage_discharge_efficiency = config.storage_discharge_efficiency
+        self.storage_charge_rate = config.storage_charge_rate
+        self.storage_discharge_rate = config.storage_discharge_rate
+        self.max_storage_size_kwh = config.max_storage_size_kwh
+        self.inverter_cost_per_kw = config.inverter_cost_per_kw
+        self.inverter_lifetime = config.inverter_lifetime
+        self.inverter_efficiency = config.inverter_efficiency
+
+        self.max_pv_system_size_kwp = config.max_pv_system_size_kwp
+        self.pv_system_cost_per_kwp = config.pv_system_cost_per_kwp
+        self.pv_system_lifetime = config.pv_system_lifetime
+        self.pv_system_lifetime = config.pv_system_lifetime
+
+        self.solver = config.solver
+
+        self._create_esm()
+        self._add_source()
+        self._add_transmission()
+        self._add_sink()
+
+        if self.add_stor:
+            self.add_storage()
+
+        if self.add_sol:
+            self.add_solar()
+
+        if self.auto_opt:
+            self.optimize()
+
+
+    def _create_esm(self):
+
+        self.esm = fn.EnergySystemModel(
+            locations={"source", "load"},
+            commodities={"energy", "stored_energy"},
+            commodityUnitsDict={"energy": "kWh", "stored_energy": "kWh"},
+            costUnit='Euro',
+            numberOfTimeSteps=self.number_of_timesteps,
+            hoursPerTimeStep=self.hours_per_timestep,
+            verboseLogLevel=2)
+
+
+    def _add_sink(self):
+
+        load_df = pd.DataFrame(
+            columns=["source", "load"],
+            index=np.arange(0, self.number_of_timesteps, 1))
+
+        load_df["source"] = 0
+        load_df["load"] = self.consumption_timeseries
+
+        self.esm.add(
+            fn.Sink(
+                esM=self.esm,
+                commodity="energy",
+                name="load",
+                hasCapacityVariable=False,
+                operationRateFix=load_df))
+
+
+    def _add_source(self):
+
+        source_df = pd.DataFrame(
+            columns=["source", "load"],
+            index=np.arange(0, self.number_of_timesteps, 1))
+
+        source_df["source"] = 1e18
+        source_df["load"] = 0
+
+        self.esm.add(
+            fn.Source(
+                esM=self.esm,
+                commodity="energy",
+                name="source",
+                hasCapacityVariable=False,
+                operationRateMax=source_df,
+                opexPerOperation=self.producer_energy_price))
+
+
+    def _add_transmission(self):
+
+        self.esm.add(
+            fn.Transmission(
+                esM=self.esm,
+                name="capacity_price",
+                commodity="energy",
+                hasCapacityVariable=True,
+                investPerCapacity=self.grid_capacity_price,
+                interestRate=self.interest_rate,
+                economicLifetime=1,
+                technicalLifetime=1))
+
+
+    # TODO: remove solar data as required parameter
+    # IMO this should be done per request or with csv or similar
+    def add_solar(
+        self,
+        solar_data: pd.Series):
+
+        solar_df = pd.DataFrame(
+            columns=["source", "load"],
+            index=np.arange(0, self.number_of_timesteps, 1))
+
+        solar_df["source"] = 0
+        solar_df["load"] = solar_data
+
+        self.esm.add(
+            fn.Source(
+                esM=self.esm,
+                name="PV",
+                commodity="energy",
+                hasCapacityVariable=True,
+                operationRateMax=solar_df,
+                capacityMax=self.max_pv_system_size_kwp,
+                investPerCapacity=self.pv_system_cost_per_kwp,
+                interestRate=self.interest_rate,
+                economicLifetime=self.pv_system_lifetime,
+                technicalLifetime=self.pv_system_lifetime))
+
+
+    def add_storage(self):
+
+        self.esm.add(
+            fn.Conversion(
+                esM=self.esm,
+                name="to_storage",
+                physicalUnit="kWh",
+                commodityConversionFactors={'energy': -1, 'stored_energy': self.inverter_efficiency},
+                hasCapacityVariable=True,
+                investPerCapacity=0,
+                linkedConversionCapacityID="storage",
+                interestRate=self.interest_rate))
+
+        self.esm.add(
+            fn.Storage(
+                esM=self.esm,
+                name="storage",
+                commodity="stored_energy",
+                hasCapacityVariable=True,
+                cyclicLifetime=10000,
+                chargeEfficiency=self.storage_charge_efficiency,
+                dischargeEfficiency=self.storage_discharge_efficiency,
+                capacityMax=self.max_storage_size_kwh,
+                economicLifetime=self.storage_lifetime,
+                technicalLifetime=self.storage_lifetime,
+                chargeRate=self.storage_charge_rate,
+                dischargeRate=self.storage_discharge_rate,
+                doPreciseTsaModeling=False,
+                investPerCapacity=self.storage_cost_per_kwh,
+                opexPerCapacity=0.002,
+                interestRate=self.interest_rate))
+
+        self.esm.add(
+            fn.Conversion(
+                esM=self.esm,
+                name="from_storage",
+                physicalUnit="kWh",
+                commodityConversionFactors={'stored_energy': -1, 'energy': 1},
+                hasCapacityVariable=True,
+                investPerCapacity=self.inverter_cost_per_kw,
+                economicLifetime=self.inverter_lifetime,
+                technicalLifetime=self.inverter_lifetime,
+                linkedConversionCapacityID="storage",
+                interestRate=self.interest_rate))
+
+
+    def optimize(self, solver="appsi_highs"):
+
+        self.esm.optimize(solver=solver)
+
+
+    def build_and_optimize(
+            self,
+            add_storage: bool = False,
+            storage_cost_per_kwh: float = 145,
+            storage_lifetime: int = 15,
+            storage_charge_efficiency: float = 0.9,
+            storage_discharge_efficiency: float = 0.9,
+            storage_charge_rate: float = 1,
+            storage_discharge_rate: float = 1,
+            max_storage_size_kwh: float | None = None,
+            inverter_cost_per_kw: float = 180,
+            inverter_lifetime: int = 15,
+            inverter_efficiency: float = 0.95,
+            add_solar: bool = False,
+            solar_data: pd.Series | None = None,
+            pv_system_cost_per_kwp: float = 900,
+            max_pv_system_size_kwp: float | None = None,
+            pv_system_lifetime: int = 30):
+
+        # model building
+        self._add_sink()
+        self._add_source()
+        self._add_transmission()
+
+        if add_storage:
+            self.add_storage(
+                storage_cost_per_kwh=storage_cost_per_kwh,
+                storage_lifetime=storage_lifetime,
+                storage_charge_efficiency=storage_charge_efficiency,
+                storage_discharge_efficiency=storage_discharge_efficiency,
+                storage_charge_rate=storage_charge_rate,
+                storage_discharge_rate=storage_discharge_rate,
+                max_storage_size_kwh=max_storage_size_kwh,
+                inverter_cost_per_kw=inverter_cost_per_kw,
+                inverter_lifetime=inverter_lifetime,
+                inverter_efficiency=inverter_efficiency)
+
+        if add_solar:
+            self.add_solar(
+                solar_data=solar_data,
+                pv_system_cost_per_kwp=pv_system_cost_per_kwp,
+                max_pv_system_size_kwp=max_pv_system_size_kwp,
+                pv_system_lifetime=pv_system_lifetime)
+
+        # optimize
+        self.optimize(solver=self.solver)
