@@ -53,8 +53,8 @@ economic_parameters:
   interest_rate: 3    # interes rate in %
 
 technical_parameters:
-  max_storage_size_kwh: None      # maximum available storage size in kWh
-  max_pv_system_size_kwp: None    # maximum available pv system size in kWpeak
+  max_storage_size_kwh:     # maximum available storage size in kWh (leave empty for infinite size)
+  max_pv_system_size_kwp:   # maximum available pv system size in kWpeak (leave empty for infinite size)
 
   storage_charge_efficiency: 0.9      # efficiency for charging storage
   storage_discharge_efficiency: 0.9   # efficiency for discharging storage
