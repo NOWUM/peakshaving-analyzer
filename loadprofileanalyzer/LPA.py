@@ -75,7 +75,7 @@ class LoadProfileAnalyzer:
     def _create_esm(self):
 
         self.esm = fn.EnergySystemModel(
-            locations={"source", "load"},
+            locations={"grid", "load"},
             commodities={"energy", "stored_energy"},
             commodityUnitsDict={"energy": "kWh", "stored_energy": "kWh"},
             costUnit='Euro',
@@ -87,10 +87,10 @@ class LoadProfileAnalyzer:
     def _add_sink(self):
 
         load_df = pd.DataFrame(
-            columns=["source", "load"],
+            columns=["grid", "load"],
             index=np.arange(0, self.number_of_timesteps, 1))
 
-        load_df["source"] = 0
+        load_df["grid"] = 0
         load_df["load"] = self.consumption_timeseries
 
         self.esm.add(
@@ -105,17 +105,17 @@ class LoadProfileAnalyzer:
     def _add_source(self):
 
         source_df = pd.DataFrame(
-            columns=["source", "load"],
+            columns=["grid", "load"],
             index=np.arange(0, self.number_of_timesteps, 1))
 
-        source_df["source"] = 1e18
+        source_df["grid"] = 1e18
         source_df["load"] = 0
 
         self.esm.add(
             fn.Source(
                 esM=self.esm,
                 commodity="energy",
-                name="source",
+                name="grid",
                 hasCapacityVariable=False,
                 operationRateMax=source_df,
                 opexPerOperation=self.producer_energy_price))
@@ -142,10 +142,10 @@ class LoadProfileAnalyzer:
         solar_data: pd.Series):
 
         solar_df = pd.DataFrame(
-            columns=["source", "load"],
+            columns=["grid", "load"],
             index=np.arange(0, self.number_of_timesteps, 1))
 
-        solar_df["source"] = 0
+        solar_df["grid"] = 0
         solar_df["load"] = solar_data
 
         self.esm.add(
