@@ -13,6 +13,8 @@ optimization_parameters:
 
   auto_opt: True    # Wether to automatically start optizmization or not
 
+  verbose: True
+
 economic_parameters:
   producer_energy_price: 0.1665 # €/kWh     # energy price if sourced from supplier
   # value for 2024 taken from:

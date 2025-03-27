@@ -6,7 +6,7 @@ import pandas as pd
 
 from loadprofileanalyzer import Config
 
-logger = logging.getLogger("model_builder")
+logger = logging.getLogger("loadprofileanalyzer")
 
 
 class LoadProfileAnalyzer:
@@ -22,6 +22,7 @@ class LoadProfileAnalyzer:
         self.add_stor = config.add_stor
         self.add_sol = config.add_sol
         self.auto_opt = config.auto_opt
+        self.verbose = config.verbose
 
         self.interest_rate = config.interest_rate
 
@@ -47,19 +48,28 @@ class LoadProfileAnalyzer:
 
         self.solver = config.solver
 
+        if self.verbose:
+            logger.setLevel(logging.INFO)
+        else:
+            logger.setLevel(logging.ERROR)
+
         self._create_esm()
         self._add_source()
         self._add_transmission()
         self._add_sink()
+        logging.info("Built default ESM")
 
         if self.add_stor:
             self.add_storage()
+            logging.info("Added storage")
 
         if self.add_sol:
             self.add_solar()
+            logging.info("Added solar")
 
         if self.auto_opt:
             self.optimize()
+            logging.info("Optimized")
 
 
     def _create_esm(self):
@@ -200,6 +210,7 @@ class LoadProfileAnalyzer:
 
     def optimize(self, solver="appsi_highs"):
 
+        logging.info("Optimizing. Depending on the given parameters and your setup, this may take a while.")
         self.esm.optimize(solver=solver)
 
 

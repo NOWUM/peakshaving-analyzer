@@ -24,6 +24,7 @@ class Config:
         self.add_stor = opti_values.get('add_storage')
         self.add_sol = opti_values.get('add_solar')
         self.auto_opt = opti_values.get('auto_opt')
+        self.verbose = opti_values.get('verbose')
         
         eco_values = config.get('economic_parameters', {})
         self.producer_energy_price = eco_values.get('producer_energy_price')
