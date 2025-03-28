@@ -18,9 +18,9 @@ class LoadProfileAnalyzer:
 
         self.consumption_timeseries = config.consumption_timeseries
         self.hours_per_timestep = config.hours_per_timestep
-        self.number_of_timesteps = config.number_of_timesteps
-        self.add_stor = config.add_stor
-        self.add_sol = config.add_sol
+        self.number_of_timesteps = len(self.consumption_timeseries)
+        self.add_stor = config.add_storage
+        self.add_sol = config.add_solar
         self.auto_opt = config.auto_opt
         self.verbose = config.verbose
 

@@ -19,10 +19,9 @@ class Config:
 
         opti_values = config.get('optimization_parameters')
         self.name = opti_values.get('name')
-        self.number_of_timesteps = opti_values.get('number_of_timesteps')
         self.hours_per_timestep = opti_values.get('hours_per_timestep')
-        self.add_stor = opti_values.get('add_storage')
-        self.add_sol = opti_values.get('add_solar')
+        self.add_storage = opti_values.get('add_storage')
+        self.add_solar = opti_values.get('add_solar')
         self.auto_opt = opti_values.get('auto_opt')
         self.verbose = opti_values.get('verbose')
         

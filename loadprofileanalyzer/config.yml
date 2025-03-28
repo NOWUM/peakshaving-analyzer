@@ -1,11 +1,10 @@
 consumption_timeseries:
-  file_path: loadprofileanalyzer/consumption.csv  # file path where consumption is stored as .csv
+  file_path: loadprofileanalyzer/test_cons.csv  # file path where consumption is stored as .csv
   value_column: consumption                       # name of the column where consumption is provided
 
 optimization_parameters:
   name: example_optimization    # name of the optimization
 
-  number_of_timesteps: 35040  # 1 year
   hours_per_timestep: 0.25    # in 15-minute timesteps
 
   add_storage: True   # wether to add storage to optimization or not
