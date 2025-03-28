@@ -218,6 +218,20 @@ class LoadProfileAnalyzer:
         self.esm.optimize(solver=solver)
 
 
+    def save_results(self, config):
+        """Save the results of the optimization to the database.
+
+        Args:
+            config (Config): LPA Config
+        """
+
+        DBHandler = DatabaseHandler(
+            config=config,
+            esm=self.esm,)
+
+        DBHandler.save_all()
+
+
     def build_and_optimize(
             self,
             add_storage: bool = False,
