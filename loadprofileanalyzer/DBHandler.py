@@ -100,6 +100,7 @@ class DatabaseHandler:
         logger.info("Saving all data to database.")
         self.save_config()
         self.save_consumption()
+        self.save_variable_costs()
         logger.info("All data saved to database.")
 
 
@@ -130,3 +131,39 @@ class DatabaseHandler:
 
         # write to sql
         self._df_to_sql(consumption_df, "consumption_timeseries")
+
+
+    def _get_val_from_sum(
+            self,
+            model_name: str,
+            index: tuple[str],
+            location) -> float:
+
+        return self.esm.getOptimizationSummary(model_name).loc[index, location]
+
+
+    def save_variable_costs(self) -> None:
+        """Writes the costs data to the database.
+        """
+        logger.info("Saving costs data to database.")
+
+        # create DataFrame
+        df = pd.DataFrame()
+        df["name"] = [self.name]
+        df["grid_energy_costs"] = [self._get_val_from_sum(
+            model_name="TransmissionModel",
+            index=("capacity_price", "operation", "[kWh*h]", "grid"),
+            location="consumption_site")]
+        df["grid_capacity_costs"] = [self._get_val_from_sum(
+            model_name="TransmissionModel",
+            index=("capacity_price", "invest", "[Euro]", "grid"),
+            location="consumption_site")]
+        df["producer_energy_costs"] = [self._get_val_from_sum(
+            model_name="SourceSinkModel",
+            index=("grid", "opexOp", "[Euro/a]"),
+            location="grid")]
+        df["total_costs"] = df.drop(columns="name").sum(axis=1)
+
+        # write to sql
+        self._df_to_sql(df, "variable_costs")
+
