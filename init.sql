@@ -31,10 +31,10 @@ CREATE TABLE IF NOT EXISTS consumption_timeseries (
     PRIMARY KEY (name, timestep)
 );
 
-CREATE TABLE IF NOT EXISTS variable_costs (
+CREATE TABLE IF NOT EXISTS grid (
     name TEXT PRIMARY KEY,
-    grid_energy_costs FLOAT NOT NULL,
-    grid_capacity_costs FLOAT NOT NULL,
-    producer_energy_costs FLOAT NOT NULL,
+    grid_energy_costs_eur FLOAT NOT NULL,
+    grid_capacity_costs_eur FLOAT NOT NULL,
+    grid_capacity_kw FLOAT NOT NULL,
     total_costs FLOAT NOT NULL
 );

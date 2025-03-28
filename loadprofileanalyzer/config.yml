@@ -15,7 +15,7 @@ optimization_parameters:
   verbose: True   # Wether to print optimization progress or not
 
   db_uri: postgresql://postgres:postgres@172.19.0.3:5432/lpa    # database connection string
-  overwrite_existing_optimization: False                         # Wether to overwrite existing optimization or not
+  overwrite_existing_optimization: True                         # Wether to overwrite existing optimization or not
 
 economic_parameters:
   producer_energy_price: 0.1665 # €/kWh     # energy price if sourced from supplier

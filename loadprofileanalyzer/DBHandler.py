@@ -100,7 +100,15 @@ class DatabaseHandler:
         logger.info("Saving all data to database.")
         self.save_config()
         self.save_consumption()
-        self.save_variable_costs()
+        self.save_grid()
+
+        if self.config.add_storage:
+            self.save_storage_data()
+            self.save_inverter_data()
+
+        if self.config.add_solar:
+            self.save_solar_data()
+
         logger.info("All data saved to database.")
 
 
@@ -142,7 +150,7 @@ class DatabaseHandler:
         return self.esm.getOptimizationSummary(model_name).loc[index, location]
 
 
-    def save_grid_costs(self) -> None:
+    def save_grid_data(self) -> None:
         """Writes the costs data to the database.
         """
         logger.info("Saving costs data to database.")
@@ -150,20 +158,69 @@ class DatabaseHandler:
         # create DataFrame
         df = pd.DataFrame()
         df["name"] = [self.name]
-        df["grid_energy_costs"] = [self._get_val_from_sum(
+        df["grid_energy_costs_eur"] = [self._get_val_from_sum(
             model_name="TransmissionModel",
             index=("capacity_price", "operation", "[kWh*h]", "grid"),
             location="consumption_site")]
-        df["grid_capacity_costs"] = [self._get_val_from_sum(
+        df["grid_capacity_costs_eur"] = [self._get_val_from_sum(
             model_name="TransmissionModel",
             index=("capacity_price", "invest", "[Euro]", "grid"),
             location="consumption_site")]
-        df["producer_energy_costs"] = [self._get_val_from_sum(
-            model_name="SourceSinkModel",
-            index=("grid", "opexOp", "[Euro/a]"),
-            location="grid")]
-        df["total_costs"] = df.drop(columns="name").sum(axis=1)
+        df["grid_capacity_kw"] = [self._get_val_from_sum(
+            model_name="TransmissionModel",
+            index=("capacity_price", "capacity", "[kWh]", "grid"),
+            location="consumption_site")]
+        df["total_costs"] = df["grid_energy_costs_eur" ] + df["grid_capacity_costs_eur"]
 
         # write to sql
-        self._df_to_sql(df, "variable_costs")
+        self._df_to_sql(df, "grid")
 
+
+    def save_storage_data(self) -> None:
+        """Writes the storage data to the database.
+        """
+        logger.info("Saving investment costs data to database.")
+
+        # create DataFrame
+        df = pd.DataFrame()
+        df["name"] = [self.name]
+        df["invest_eur"] = self._get_val_from_sum(
+            model_name="StorageModel",
+            index=("storage", "invest", "[Euro]"),
+            location="consumption_site")
+        df["annuity_eur"] = self._get_val_from_sum(
+            model_name="SourceSinkModel",
+            index=("storage", "TAC", "[Euro/a]"),
+            location="consumption_site")
+        df["capacity_kwh"] = self._get_val_from_sum(
+            model_name="StorageModel",
+            index=("storage", "capacity", "[kWh*h]"),
+            location="consumption_site")
+
+        # write to sql
+        self._df_to_sql(df, "storage")
+
+
+    def save_inverter_data(self) -> None:
+        """Writes the inverter data to the database.
+        """
+        logger.info("Saving inverter data to database.")
+
+        # create DataFrame
+        df = pd.DataFrame()
+        df["name"] = [self.name]
+        df["invest_eur"] = self._get_val_from_sum(
+            model_name="ConversionModel",
+            index=("from_storage", "invest", "[Euro]"),
+            location="consumption_site")
+        df["annuity_eur"] = self._get_val_from_sum(
+            model_name="ConversionModel",
+            index=("from_storage", "TAC", "[Euro/a]"),
+            location="consumption_site")
+        df["capacity_kw"] = self._get_val_from_sum(
+            model_name="ConversionModel",
+            index=("inverter", "capacity", "[kWh]"),
+            location="consumption_site")
+
+        # write to sql
+        self._df_to_sql(df, "inverter")
