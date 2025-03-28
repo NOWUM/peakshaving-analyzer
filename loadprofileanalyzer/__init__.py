@@ -2,6 +2,7 @@
 
 from loadprofileanalyzer.config import Config
 from loadprofileanalyzer.LPA import LoadProfileAnalyzer
+from loadprofileanalyzer.DatabaseHandler import DatabaseHandler
 
 """
 LoadProfileAnalyzer package initialization.

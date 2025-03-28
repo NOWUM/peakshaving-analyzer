@@ -4,7 +4,7 @@ import fine as fn
 import numpy as np
 import pandas as pd
 
-from loadprofileanalyzer import Config
+from loadprofileanalyzer import Config, DatabaseHandler
 
 logger = logging.getLogger("loadprofileanalyzer")
 
@@ -23,6 +23,7 @@ class LoadProfileAnalyzer:
         self.add_sol = config.add_solar
         self.auto_opt = config.auto_opt
         self.verbose = config.verbose
+        self.db_uri = config.db_uri
 
         self.interest_rate = config.interest_rate
 
@@ -68,8 +69,11 @@ class LoadProfileAnalyzer:
             logging.info("Added solar")
 
         if self.auto_opt:
-            self.optimize()
+            # self.optimize()
             logging.info("Optimized")
+
+            self.save_results(config)
+            logging.info("Saved results")
 
 
     def _create_esm(self):

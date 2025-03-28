@@ -24,6 +24,8 @@ class Config:
         self.add_solar = opti_values.get('add_solar')
         self.auto_opt = opti_values.get('auto_opt')
         self.verbose = opti_values.get('verbose')
+        self.db_uri = opti_values.get('db_uri')
+        self.overwrite_existing_optimization = opti_values.get('overwrite_existing_optimization')
         
         eco_values = config.get('economic_parameters', {})
         self.producer_energy_price = eco_values.get('producer_energy_price')
