@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS optimization_parameters (
     name TEXT PRIMARY KEY,
     hours_per_timestep FLOAT NOT NULL,
-    add_stor BOOL NOT NULL,
+    add_storage BOOL NOT NULL,
     add_solar BOOL NOT NULL,
     producer_energy_price FLOAT NOT NULL,
     grid_capacity_price FLOAT NOT NULL,
@@ -22,4 +22,11 @@ CREATE TABLE IF NOT EXISTS optimization_parameters (
     inverter_efficiency FLOAT NOT NULL,
     pv_system_kwp_per_m2 FLOAT NOT NULL,
     solver TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS consumption_timeseries (
+    name TEXT NOT NULL,
+    timestep INTEGER NOT NULL,
+    consumption FLOAT NOT NULL,
+    PRIMARY KEY (name, timestep)
 );

@@ -227,7 +227,8 @@ class LoadProfileAnalyzer:
 
         DBHandler = DatabaseHandler(
             config=config,
-            esm=self.esm,)
+            esm=self.esm,
+        )
 
         DBHandler.save_all()
 

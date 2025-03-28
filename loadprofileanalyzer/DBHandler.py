@@ -6,7 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 import fine as fn
 import pandas as pd
-from psycopg2.errors import UniqueViolation
+import numpy as np
 
 from loadprofileanalyzer import Config
 
@@ -14,7 +14,8 @@ logger = logging.getLogger("DatabaseHandler")
 
 
 TABLES = [
-    "optimization_parameters",]
+    "optimization_parameters",
+    "consumption_timeseries"]
 
 class DatabaseHandler:
 
@@ -29,7 +30,7 @@ class DatabaseHandler:
         self.engine = sqlalchemy.create_engine(config.db_uri)
 
         self.name = deepcopy(config.name)
-        self.overwrite_existing = deepcopy(config.overwrite_existing_optimization   )
+        self.overwrite_existing = deepcopy(config.overwrite_existing_optimization)
 
         self._test_connection()
 
@@ -61,6 +62,7 @@ class DatabaseHandler:
                 for table in TABLES:
                     sql = text(f"DELETE FROM {table} WHERE name = '{self.name}'")
                     conn.execute(sql)
+                conn.commit()
             logger.info("Old optimization data removed from database.")
         except Exception as e:
             logger.error(f"Error removing old optimization data from database: {e}")
@@ -97,6 +99,7 @@ class DatabaseHandler:
         """
         logger.info("Saving all data to database.")
         self.save_config()
+        self.save_consumption()
         logger.info("All data saved to database.")
 
 
@@ -113,3 +116,17 @@ class DatabaseHandler:
 
         # write to sql
         self._df_to_sql(config_df, "optimization_parameters")
+
+
+    def save_consumption(self) -> None:
+        """Writes the consumption data to the database.
+        """
+        logger.info("Saving consumption data to database.")
+
+        # create DataFrame from config
+        consumption_df = pd.DataFrame(self.config.consumption_timeseries)
+        consumption_df["timestep"] = np.arange(len(consumption_df))
+        consumption_df["name"] = self.name
+
+        # write to sql
+        self._df_to_sql(consumption_df, "consumption_timeseries")
