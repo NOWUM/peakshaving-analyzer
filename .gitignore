@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# docker volumes
+data/
+
 # Distribution / packaging
 .Python
 build/

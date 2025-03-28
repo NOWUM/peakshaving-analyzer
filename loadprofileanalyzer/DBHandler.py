@@ -142,7 +142,7 @@ class DatabaseHandler:
         return self.esm.getOptimizationSummary(model_name).loc[index, location]
 
 
-    def save_variable_costs(self) -> None:
+    def save_grid_costs(self) -> None:
         """Writes the costs data to the database.
         """
         logger.info("Saving costs data to database.")
