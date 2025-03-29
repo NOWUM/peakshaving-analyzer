@@ -101,7 +101,8 @@ class DatabaseHandler:
         """
         log.info("Saving all data to database.")
         self.save_config()
-        self.save_consumption()
+        self.save_consumption_timeseries()
+        self.save_price_timeseries()
         self.save_opti_data()
 
         log.info("All data saved to database.")
@@ -112,7 +113,14 @@ class DatabaseHandler:
         """
 
         # remove unnecessary keys from config
-        keys_to_exclude = ["consumption_timeseries", "db_uri", "overwrite_existing_optimization", "auto_opt", "verbose"]
+        keys_to_exclude = [
+            "consumption_timeseries",
+            "price_timeseries",
+            "db_uri",
+            "overwrite_price_timeseries",
+            "overwrite_existing_optimization",
+            "auto_opt",
+            "verbose"]
         conf_to_save = {key: value for key, value in vars(self.config).items() if key not in keys_to_exclude}
 
         # create dataFrame from config
@@ -122,7 +130,7 @@ class DatabaseHandler:
         self._df_to_sql(config_df, "optimization_parameters")
 
 
-    def save_consumption(self) -> None:
+    def save_consumption_timeseries(self) -> None:
         """Writes the consumption data to the database.
         """
         log.info("Saving consumption data to database.")
@@ -134,6 +142,22 @@ class DatabaseHandler:
 
         # write to sql
         self._df_to_sql(consumption_df, "consumption_timeseries")
+
+
+    def save_price_timeseries(self) -> None:
+        """Writes the price data to the database.
+        """
+        log.info("Saving price data to database.")
+
+        # create DataFrame from config
+        price_df = deepcopy(self.config.price_timeseries)
+        price_df["timestep"] = np.arange(len(price_df))
+        price_df["name"] = self.name
+        price_df.rename(columns={"grid": "price"}, inplace=True)
+        price_df = price_df[["name", "timestep", "price"]]
+
+        # write to sql
+        self._df_to_sql(price_df, "price_timeseries")
 
 
     def _get_val_from_sum(
@@ -159,6 +183,12 @@ class DatabaseHandler:
         tech_df = pd.DataFrame()
         eco_df["name"] = [self.name]
         tech_df["name"] = [self.name]
+
+        # energy itself
+        eco_df["energy_costs_eur"] = [self._get_val_from_sum(
+            model_name="SourceSinkModel",
+            index=("grid", "TAC", "[Euro/a]"),
+            location="grid")]
 
         # grid data
         eco_df["grid_energy_costs_eur"] = [self._get_val_from_sum(

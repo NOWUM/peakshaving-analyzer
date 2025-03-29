@@ -28,6 +28,7 @@ class Config:
         self.overwrite_existing_optimization = opti_values.get('overwrite_existing_optimization')
         
         eco_values = config.get('economic_parameters', {})
+        self.overwrite_price_timeseries = eco_values.get('overwrite_price_timeseries')
         self.producer_energy_price = eco_values.get('producer_energy_price')
         self.grid_capacity_price = eco_values.get('grid_capacity_price')
         self.grid_energy_price = eco_values.get('grid_energy_price')
@@ -51,29 +52,21 @@ class Config:
 
         self.solver = config.get('solver', 'appsi_highs')
 
+        self.price_timeseries = self.read_price_timeseries(config=config)
 
-    def __repr__(self):
+        if self.overwrite_price_timeseries:
+            self.price_timeseries['grid'] = self.producer_energy_price
+
+
+    def read_price_timeseries(self, config):
         """
-        String representation of the Config object for debugging.
+        Read the price timeseries from the specified CSV file.
+
+        Returns:
+            pd.Series: The price timeseries.
         """
-        return (
-            f"Config(producer_energy_price={self.producer_energy_price}, "
-            f"grid_capacity_price={self.grid_capacity_price}, "
-            f"grid_energy_price={self.grid_energy_price}, "
-            f"pv_system_lifetime={self.pv_system_lifetime}, "
-            f"pv_system_cost_per_kwp={self.pv_system_cost_per_kwp}, "
-            f"inverter_lifetime={self.inverter_lifetime}, "
-            f"inverter_cost_per_kw={self.inverter_cost_per_kw}, "
-            f"storage_lifetime={self.storage_lifetime}, "
-            f"storage_cost_per_kwh={self.storage_cost_per_kwh}, "
-            f"interest_rate={self.interest_rate}, "
-            f"storage_charge_efficiency={self.storage_charge_efficiency}, "
-            f"storage_discharge_efficiency={self.storage_discharge_efficiency}, "
-            f"storage_charge_rate={self.storage_charge_rate}, "
-            f"storage_discharge_rate={self.storage_discharge_rate}, "
-            f"inverter_efficiency={self.inverter_efficiency}, "
-            f"pv_system_kwp_per_m2={self.pv_system_kwp_per_m2}, "
-            f"solver={self.solver}, "
-            f"number_of_timesteps={self.number_of_timesteps}, "
-            f"hours_per_timestep={self.hours_per_timestep})"
-        )
+        df = pd.read_csv(config.get('price_timeseries').get('file_path'), index_col=0)
+        df.rename(columns={config.get('price_timeseries').get('value_column'): 'grid'}, inplace=True)
+        df["consumption_site"] = 0
+
+        return df

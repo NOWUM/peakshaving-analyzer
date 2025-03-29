@@ -17,6 +17,7 @@ class LoadProfileAnalyzer:
             ) -> None:
 
         self.consumption_timeseries = config.consumption_timeseries
+        self.price_timeseries = config.price_timeseries
         self.hours_per_timestep = config.hours_per_timestep
         self.number_of_timesteps = len(self.consumption_timeseries)
         self.add_stor = config.add_storage
@@ -69,7 +70,7 @@ class LoadProfileAnalyzer:
             logging.info("Added solar")
 
         if self.auto_opt:
-            # self.optimize()
+            self.optimize()
             logging.info("Optimized")
 
             self.save_results(config)
@@ -122,7 +123,7 @@ class LoadProfileAnalyzer:
                 name="grid",
                 hasCapacityVariable=False,
                 operationRateMax=source_df,
-                opexPerOperation=self.producer_energy_price))
+                commodityCostTimeSeries=self.price_timeseries))
 
 
     def _add_transmission(self):

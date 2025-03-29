@@ -31,8 +31,16 @@ CREATE TABLE IF NOT EXISTS consumption_timeseries (
     PRIMARY KEY (name, timestep)
 );
 
+CREATE TABLE IF NOT EXISTS price_timeseries (
+    name TEXT NOT NULL,
+    timestep INTEGER NOT NULL,
+    price FLOAT NOT NULL,
+    PRIMARY KEY (name, timestep)
+);
+
 CREATE TABLE IF NOT EXISTS economical (
     name TEXT PRIMARY KEY,
+    energy_costs_eur FLOAT NOT NULL,
     grid_energy_costs_eur FLOAT NOT NULL,
     grid_capacity_costs_eur FLOAT NOT NULL,
     storage_invest_eur FLOAT NOT NULL,
