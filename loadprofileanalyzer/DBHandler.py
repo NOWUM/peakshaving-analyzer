@@ -15,7 +15,9 @@ log = logging.getLogger("DatabaseHandler")
 
 TABLES = [
     "optimization_parameters",
-    "consumption_timeseries"]
+    "consumption_timeseries",
+    "technical",
+    "economical"]
 
 class DatabaseHandler:
 
@@ -204,6 +206,9 @@ class DatabaseHandler:
         eco_df["solar_invest_eur"] = 0
         eco_df["solar_annuity_eur"] = 0
         tech_df["solar_capacity_kwp"] = 0
+
+        # calculate total costs
+        eco_df["total_costs_eur"] = eco_df.drop(columns="name").sum(axis=1)
 
         # write to sql
         self._df_to_sql(eco_df, "economical")

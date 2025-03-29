@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS economical (
     inverter_annuity_eur FLOAT NOT NULL,
     solar_invest_eur FLOAT NOT NULL,
     solar_annuity_eur FLOAT NOT NULL,
-    total_costs FLOAT NOT NULL
+    total_costs_eur FLOAT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS technical (
