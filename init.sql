@@ -31,10 +31,23 @@ CREATE TABLE IF NOT EXISTS consumption_timeseries (
     PRIMARY KEY (name, timestep)
 );
 
-CREATE TABLE IF NOT EXISTS grid (
+CREATE TABLE IF NOT EXISTS economical (
     name TEXT PRIMARY KEY,
     grid_energy_costs_eur FLOAT NOT NULL,
     grid_capacity_costs_eur FLOAT NOT NULL,
-    grid_capacity_kw FLOAT NOT NULL,
+    storage_invest_eur FLOAT NOT NULL,
+    storage_annuity_eur FLOAT NOT NULL,
+    inverter_invest_eur FLOAT NOT NULL,
+    inverter_annuity_eur FLOAT NOT NULL,
+    solar_invest_eur FLOAT NOT NULL,
+    solar_annuity_eur FLOAT NOT NULL,
     total_costs FLOAT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS technical (
+    name TEXT PRIMARY KEY,
+    grid_capacity_kw FLOAT NOT NULL,
+    storage_capacity_kwh FLOAT NOT NULL,
+    inverter_capacity_kw FLOAT NOT NULL,
+    solar_capacity_kwp FLOAT NOT NULL
 );

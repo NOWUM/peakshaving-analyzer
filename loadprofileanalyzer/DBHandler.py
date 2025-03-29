@@ -10,7 +10,7 @@ import numpy as np
 
 from loadprofileanalyzer import Config
 
-logger = logging.getLogger("DatabaseHandler")
+log = logging.getLogger("DatabaseHandler")
 
 
 TABLES = [
@@ -48,7 +48,7 @@ class DatabaseHandler:
             if attempt < 5:
                 attempt += 1
 
-            logger.error(f"Could not connect to database in 5 tries: {e}")
+            log.error(f"Could not connect to database in 5 tries: {e}")
 
             raise e
 
@@ -56,16 +56,16 @@ class DatabaseHandler:
     def _remove_old_optimization(self):
         """Removes old optimization data from the database.
         """
-        logger.info("Removing old optimization data from database.")
+        log.info("Removing old optimization data from database.")
         try:
             with self.engine.connect() as conn:
                 for table in TABLES:
                     sql = text(f"DELETE FROM {table} WHERE name = '{self.name}'")
                     conn.execute(sql)
                 conn.commit()
-            logger.info("Old optimization data removed from database.")
+            log.info("Old optimization data removed from database.")
         except Exception as e:
-            logger.error(f"Error removing old optimization data from database: {e}")
+            log.error(f"Error removing old optimization data from database: {e}")
 
 
     def _df_to_sql(
@@ -79,7 +79,7 @@ class DatabaseHandler:
             df (pd.DataFrame): DataFrame to write.
             table_name (str): Name of the table to write to.
         """
-        logger.info(f"Writing DataFrame to {table_name} table in database.")
+        log.info(f"Writing DataFrame to {table_name} table in database.")
         try:
             df.to_sql(
                 name=table_name,
@@ -87,29 +87,22 @@ class DatabaseHandler:
                 if_exists="append",
                 index=False,
             )
-            logger.info(f"DataFrame written to {table_name} table in database.")
+            log.info(f"DataFrame written to {table_name} table in database.")
         except IntegrityError as uv:
-            logger.error("Optimization already exist! To overwrite, set overwrite_existing_optimization to True.")
+            log.error("Optimization already exist! To overwrite, set overwrite_existing_optimization to True.")
         except Exception as e:
-            logger.error(f"Error writing DataFrame to {table_name} table in database: {e}")
+            log.error(f"Error writing DataFrame to {table_name} table in database: {e}")
 
 
     def save_all(self) -> None:
         """Saves all data to the database.
         """
-        logger.info("Saving all data to database.")
+        log.info("Saving all data to database.")
         self.save_config()
         self.save_consumption()
-        self.save_grid()
+        self.save_opti_data()
 
-        if self.config.add_storage:
-            self.save_storage_data()
-            self.save_inverter_data()
-
-        if self.config.add_solar:
-            self.save_solar_data()
-
-        logger.info("All data saved to database.")
+        log.info("All data saved to database.")
 
 
     def save_config(self) -> None:
@@ -130,7 +123,7 @@ class DatabaseHandler:
     def save_consumption(self) -> None:
         """Writes the consumption data to the database.
         """
-        logger.info("Saving consumption data to database.")
+        log.info("Saving consumption data to database.")
 
         # create DataFrame from config
         consumption_df = pd.DataFrame(self.config.consumption_timeseries)
@@ -147,80 +140,71 @@ class DatabaseHandler:
             index: tuple[str],
             location) -> float:
 
-        return self.esm.getOptimizationSummary(model_name).loc[index, location]
+        try:
+            return self.esm.getOptimizationSummary(model_name).loc[index, location]
+        except KeyError:
+            log.warning(f"KeyError: {index} not found in {model_name} model.")
+            return 0.0
 
 
-    def save_grid_data(self) -> None:
-        """Writes the costs data to the database.
+    def save_opti_data(self) -> None:
+        """Writes the data to the database.
         """
-        logger.info("Saving costs data to database.")
+        log.info("Saving data to database.")
 
         # create DataFrame
-        df = pd.DataFrame()
-        df["name"] = [self.name]
-        df["grid_energy_costs_eur"] = [self._get_val_from_sum(
+        eco_df = pd.DataFrame()
+        tech_df = pd.DataFrame()
+        eco_df["name"] = [self.name]
+        tech_df["name"] = [self.name]
+
+        # grid data
+        eco_df["grid_energy_costs_eur"] = [self._get_val_from_sum(
             model_name="TransmissionModel",
             index=("capacity_price", "operation", "[kWh*h]", "grid"),
             location="consumption_site")]
-        df["grid_capacity_costs_eur"] = [self._get_val_from_sum(
+        eco_df["grid_capacity_costs_eur"] = [self._get_val_from_sum(
             model_name="TransmissionModel",
             index=("capacity_price", "invest", "[Euro]", "grid"),
             location="consumption_site")]
-        df["grid_capacity_kw"] = [self._get_val_from_sum(
+        tech_df["grid_capacity_kw"] = [self._get_val_from_sum(
             model_name="TransmissionModel",
             index=("capacity_price", "capacity", "[kWh]", "grid"),
             location="consumption_site")]
-        df["total_costs"] = df["grid_energy_costs_eur" ] + df["grid_capacity_costs_eur"]
 
-        # write to sql
-        self._df_to_sql(df, "grid")
-
-
-    def save_storage_data(self) -> None:
-        """Writes the storage data to the database.
-        """
-        logger.info("Saving investment costs data to database.")
-
-        # create DataFrame
-        df = pd.DataFrame()
-        df["name"] = [self.name]
-        df["invest_eur"] = self._get_val_from_sum(
+        # storage data
+        eco_df["storage_invest_eur"] = self._get_val_from_sum(
             model_name="StorageModel",
             index=("storage", "invest", "[Euro]"),
             location="consumption_site")
-        df["annuity_eur"] = self._get_val_from_sum(
+        eco_df["storage_annuity_eur"] = self._get_val_from_sum(
             model_name="SourceSinkModel",
             index=("storage", "TAC", "[Euro/a]"),
             location="consumption_site")
-        df["capacity_kwh"] = self._get_val_from_sum(
+        tech_df["storage_capacity_kwh"] = self._get_val_from_sum(
             model_name="StorageModel",
             index=("storage", "capacity", "[kWh*h]"),
             location="consumption_site")
 
-        # write to sql
-        self._df_to_sql(df, "storage")
-
-
-    def save_inverter_data(self) -> None:
-        """Writes the inverter data to the database.
-        """
-        logger.info("Saving inverter data to database.")
-
-        # create DataFrame
-        df = pd.DataFrame()
-        df["name"] = [self.name]
-        df["invest_eur"] = self._get_val_from_sum(
+        # inverter data
+        eco_df["inverter_invest_eur"] = self._get_val_from_sum(
             model_name="ConversionModel",
             index=("from_storage", "invest", "[Euro]"),
             location="consumption_site")
-        df["annuity_eur"] = self._get_val_from_sum(
+        eco_df["inverter_annuity_eur"] = self._get_val_from_sum(
             model_name="ConversionModel",
             index=("from_storage", "TAC", "[Euro/a]"),
             location="consumption_site")
-        df["capacity_kw"] = self._get_val_from_sum(
+        tech_df["inverter_capacity_kw"] = self._get_val_from_sum(
             model_name="ConversionModel",
             index=("inverter", "capacity", "[kWh]"),
             location="consumption_site")
 
+        # solar data
+        eco_df["solar_invest_eur"] = 0
+        eco_df["solar_annuity_eur"] = 0
+        tech_df["solar_capacity_kwp"] = 0
+
         # write to sql
-        self._df_to_sql(df, "inverter")
+        self._df_to_sql(eco_df, "economical")
+        self._df_to_sql(tech_df, "technical")
