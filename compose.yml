@@ -1,0 +1,27 @@
+services:
+  database:
+    image: timescale/timescaledb-ha:pg17
+    container_name: lpa_database
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=lpa
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./data/database:/var/lib/postgresql/data
+
+  pgadmin_service:
+    image: dpage/pgadmin4:latest
+    container_name: lpa_pgadmin
+    restart: always
+    user: root
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.org
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    volumes:
+      - ./data/pgadmin:/var/lib/pgadmin
