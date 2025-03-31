@@ -150,4 +150,4 @@ class Config:
         df["grid"] = 0
         log.info("Solar timeseries successfully read and processed.")
 
-        return df.head()
+        return df

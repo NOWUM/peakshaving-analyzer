@@ -1,7 +1,7 @@
 optimization_parameters:
   name: example_optimization    # name of the optimization
 
-  db_uri: postgresql://postgres:postgres@172.19.0.3:5432/lpa    # database connection string
+  db_uri: postgresql://postgres:postgres@lpa_database:5432/lpa    # database connection string
   overwrite_existing_optimization: True                         # Wether to overwrite existing optimization or not
 
   hours_per_timestep: 0.25    # in 15-minute timesteps
@@ -14,12 +14,12 @@ optimization_parameters:
   verbose: True   # Wether to print optimization progress or not
 
 consumption_timeseries:
-  file_path: loadprofileanalyzer/test_cons.csv  # file path where consumption is stored as .csv
+  file_path: loadprofileanalyzer/consumptin.csv   # file path where consumption is stored as .csv
   value_column: consumption                       # name of the column where consumption is provided
 
 price_timeseries:
-  file_path: loadprofileanalyzer/test_price.csv  # file path where prices are stored as .csv
-  value_column: price                            # name of the column where prices are provided
+  file_path: loadprofileanalyzer/price.csv      # file path where prices are stored as .csv
+  value_column: price                           # name of the column where prices are provided
 
 solar_timeseries:
   postal_code: 52066   # postal code for automtic solar generation calculation, leave empty for own timeseries
