@@ -1,6 +1,9 @@
 import yaml
 
 import pandas as pd
+import pgeocode
+from datetime import datetime
+import requests
 
 
 class Config:
@@ -19,13 +22,14 @@ class Config:
 
         opti_values = config.get('optimization_parameters')
         self.name = opti_values.get('name')
+        self.db_uri = opti_values.get('db_uri')
+        self.overwrite_existing_optimization = opti_values.get('overwrite_existing_optimization')
+        self.postal_code = opti_values.get('postal_code')
         self.hours_per_timestep = opti_values.get('hours_per_timestep')
         self.add_storage = opti_values.get('add_storage')
         self.add_solar = opti_values.get('add_solar')
         self.auto_opt = opti_values.get('auto_opt')
         self.verbose = opti_values.get('verbose')
-        self.db_uri = opti_values.get('db_uri')
-        self.overwrite_existing_optimization = opti_values.get('overwrite_existing_optimization')
         
         eco_values = config.get('economic_parameters', {})
         self.overwrite_price_timeseries = eco_values.get('overwrite_price_timeseries')
@@ -49,6 +53,7 @@ class Config:
         self.inverter_efficiency = tech_values.get('inverter_efficiency')
         self.max_pv_system_size_kwp = tech_values.get('max_pv_system_size_kwp')
         self.pv_system_kwp_per_m2 = tech_values.get('pv_system_kwp_per_m2')
+        self.pv_module_efficiency = tech_values.get('pv_module_efficiency')
 
         self.solver = config.get('solver', 'appsi_highs')
 
@@ -56,6 +61,9 @@ class Config:
 
         if self.overwrite_price_timeseries:
             self.price_timeseries['grid'] = self.producer_energy_price
+
+        if self.add_solar:
+            self.solar_timeseries = self.get_solar_timeseries(config=config)
 
 
     def read_price_timeseries(self, config):
@@ -70,3 +78,31 @@ class Config:
         df["consumption_site"] = 0
 
         return df
+    
+
+    def get_solar_timeseries(self, config):
+        """
+        Read the solar timeseries from brightsky.
+
+        Returns:
+            pd.Series: The solar timeseries.
+        """
+
+        # convert postal code to coordinates
+        nomi = pgeocode.Nominatim("de")
+        q = nomi.query_postal_code(self.postal_code)
+        lat, lon = q["latitude"], q["longitude"]
+
+        # make API Call
+        year = datetime.now().year - 1
+        url = f"https://api.brightsky.dev/weather?lat={lat}&lon={lon}&country=DE"
+        url += f"&date={year}-01-01T00:00:00&last_date={year}-12-31T23:45:00"
+        url += f"&timezone=auto&format=json"
+        data = requests.get(url).json()
+
+        # put data in dataframe
+        df = pd.DataFrame(data["weather"][["solar"]])
+
+        # TODO
+        # convert from kWh/m2 to kW
+
