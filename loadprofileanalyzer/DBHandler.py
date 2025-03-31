@@ -16,8 +16,9 @@ log = logging.getLogger("DatabaseHandler")
 TABLES = [
     "optimization_parameters",
     "consumption_timeseries",
-    "technical",
-    "economical"]
+    "price_timeseries",
+    "tech_results",
+    "eco_results"]
 
 class DatabaseHandler:
 

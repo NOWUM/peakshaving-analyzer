@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS price_timeseries (
     PRIMARY KEY (name, timestep)
 );
 
-CREATE TABLE IF NOT EXISTS economical (
+CREATE TABLE IF NOT EXISTS eco_results (
     name TEXT PRIMARY KEY,
     energy_costs_eur FLOAT NOT NULL,
     grid_energy_costs_eur FLOAT NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS economical (
     total_costs_eur FLOAT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS technical (
+CREATE TABLE IF NOT EXISTS tech_results (
     name TEXT PRIMARY KEY,
     grid_capacity_kw FLOAT NOT NULL,
     storage_capacity_kwh FLOAT NOT NULL,
