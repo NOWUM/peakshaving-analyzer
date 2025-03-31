@@ -6,6 +6,10 @@ from datetime import datetime
 import requests
 
 
+import logging
+log = logging.getLogger("config")
+
+
 class Config:
     def __init__(self, config_path: str):
         """
@@ -14,11 +18,14 @@ class Config:
         Args:
             config_path (str): Path to the YAML configuration file.
         """
+        log.info("Initializing Config class.")
         with open(config_path, 'r') as file:
             config = yaml.safe_load(file)
+        log.info("Configuration file loaded successfully.")
 
         cons_values = config.get('consumption_timeseries')
         self.consumption_timeseries = pd.read_csv(cons_values.get('file_path'))[cons_values.get('value_column')]
+        log.info("Consumption timeseries loaded.")
 
         opti_values = config.get('optimization_parameters')
         self.name = opti_values.get('name')
@@ -29,7 +36,8 @@ class Config:
         self.add_solar = opti_values.get('add_solar')
         self.auto_opt = opti_values.get('auto_opt')
         self.verbose = opti_values.get('verbose')
-        
+        log.info("Optimization parameters loaded.")
+
         eco_values = config.get('economic_parameters', {})
         self.overwrite_price_timeseries = eco_values.get('overwrite_price_timeseries')
         self.producer_energy_price = eco_values.get('producer_energy_price')
@@ -62,14 +70,18 @@ class Config:
 
         if self.overwrite_price_timeseries:
             self.price_timeseries['grid'] = self.producer_energy_price
+            log.info("Price timeseries overwritten with producer energy price.")
 
         if self.add_solar:
             self.postal_code = config.get('solar_timeseries').get('postal_code')
             if self.postal_code:
+                log.info("Fetching solar timeseries using postal code.")
                 self.solar_timeseries = self.fetch_solar_timeseries()
-
             else:
+                log.info("Reading solar timeseries from CSV file.")
                 self.solar_timeseries = self.read_solar_timeseries(config=config)
+
+        log.info("Config class initialized successfully.")
 
 
     def read_price_timeseries(self, config):
@@ -79,9 +91,11 @@ class Config:
         Returns:
             pd.Series: The price timeseries.
         """
+        log.info("Reading price timeseries from CSV file.")
         df = pd.read_csv(config.get('price_timeseries').get('file_path'), index_col=0)
         df.rename(columns={config.get('price_timeseries').get('value_column'): 'grid'}, inplace=True)
         df["consumption_site"] = 0
+        log.info("Price timeseries successfully read and processed.")
 
         return df
     
@@ -93,21 +107,24 @@ class Config:
         Returns:
             pd.Series: The solar timeseries.
         """
-
+        log.info("Fetching solar timeseries from BrightSky API.")
         # convert postal code to coordinates
         nomi = pgeocode.Nominatim("de")
         q = nomi.query_postal_code(self.postal_code)
         lat, lon = q["latitude"], q["longitude"]
+        log.info(f"Coordinates for postal code {self.postal_code}: Latitude={lat}, Longitude={lon}")
 
         # make API Call
         year = datetime.now().year - 1
         url = f"https://api.brightsky.dev/weather?lat={lat}&lon={lon}&country=DE"
         url += f"&date={year}-01-01T00:00:00&last_date={year}-12-31T23:45:00"
         url += f"&timezone=auto&format=json"
+        log.info(f"Making API call to: {url}")
         data = requests.get(url).json()
 
         # put data in dataframe
         df = pd.DataFrame(data["weather"])[["solar"]]
+        log.info("Solar timeseries data fetched successfully.")
 
         # rename to location in ESM, add grid column with no operation possible
         df.rename(columns={"solar": "consumption_site"}, inplace=True)
@@ -127,9 +144,10 @@ class Config:
         Returns:
             pd.Series: The solar timeseries.
         """
-
+        log.info("Reading solar timeseries from CSV file.")
         df = pd.read_csv(config.get('solar_timeseries').get('file_path'), index_col=0)
         df.rename(columns={config.get('solar_timeseries').get('value_column'): 'consumption_site'}, inplace=True)
         df["grid"] = 0
+        log.info("Solar timeseries successfully read and processed.")
 
-        return df
+        return df.head()
