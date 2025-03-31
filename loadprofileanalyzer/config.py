@@ -24,7 +24,6 @@ class Config:
         self.name = opti_values.get('name')
         self.db_uri = opti_values.get('db_uri')
         self.overwrite_existing_optimization = opti_values.get('overwrite_existing_optimization')
-        self.postal_code = opti_values.get('postal_code')
         self.hours_per_timestep = opti_values.get('hours_per_timestep')
         self.add_storage = opti_values.get('add_storage')
         self.add_solar = opti_values.get('add_solar')
@@ -53,9 +52,11 @@ class Config:
         self.inverter_efficiency = tech_values.get('inverter_efficiency')
         self.max_pv_system_size_kwp = tech_values.get('max_pv_system_size_kwp')
         self.pv_system_kwp_per_m2 = tech_values.get('pv_system_kwp_per_m2')
-        self.pv_module_efficiency = tech_values.get('pv_module_efficiency')
 
         self.solver = config.get('solver', 'appsi_highs')
+
+        if self.verbose:
+            log.setLevel(logging.INFO)
 
         self.price_timeseries = self.read_price_timeseries(config=config)
 
@@ -63,7 +64,12 @@ class Config:
             self.price_timeseries['grid'] = self.producer_energy_price
 
         if self.add_solar:
-            self.solar_timeseries = self.get_solar_timeseries(config=config)
+            self.postal_code = config.get('solar_timeseries').get('postal_code')
+            if self.postal_code:
+                self.solar_timeseries = self.fetch_solar_timeseries()
+
+            else:
+                self.solar_timeseries = self.read_solar_timeseries(config=config)
 
 
     def read_price_timeseries(self, config):
@@ -80,7 +86,7 @@ class Config:
         return df
     
 
-    def get_solar_timeseries(self, config):
+    def fetch_solar_timeseries(self):
         """
         Read the solar timeseries from brightsky.
 
@@ -100,8 +106,6 @@ class Config:
         url += f"&timezone=auto&format=json"
         data = requests.get(url).json()
 
-        log.info("Got data from brightsky")
-
         # put data in dataframe
         df = pd.DataFrame(data["weather"])[["solar"]]
 
@@ -113,4 +117,19 @@ class Config:
         # kWh/m2/h = kW/m2 = 1000W/m2
         # no converseion necessary, as solar modules are tested with 1000W/m2
 
-        return df.head()
+        return df
+
+
+    def read_solar_timeseries(self, config):
+        """
+        Read the solar timeseries from the specified CSV file.
+
+        Returns:
+            pd.Series: The solar timeseries.
+        """
+
+        df = pd.read_csv(config.get('solar_timeseries').get('file_path'), index_col=0)
+        df.rename(columns={config.get('solar_timeseries').get('value_column'): 'consumption_site'}, inplace=True)
+        df["grid"] = 0
+
+        return df
