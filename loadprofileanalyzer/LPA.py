@@ -48,6 +48,9 @@ class LoadProfileAnalyzer:
         self.pv_system_lifetime = config.pv_system_lifetime
         self.pv_system_lifetime = config.pv_system_lifetime
 
+        if self.add_sol:
+            self.solar_timeseries = config.solar_timeseries
+
         self.solver = config.solver
 
         if self.verbose:
@@ -142,16 +145,7 @@ class LoadProfileAnalyzer:
 
     # TODO: remove solar data as required parameter
     # IMO this should be done per request or with csv or similar
-    def add_solar(
-        self,
-        solar_data: pd.Series):
-
-        solar_df = pd.DataFrame(
-            columns=["grid", "consumption_site"],
-            index=np.arange(0, self.number_of_timesteps, 1))
-
-        solar_df["grid"] = 0
-        solar_df["consumption_site"] = solar_data
+    def add_solar(self):
 
         self.esm.add(
             fn.Source(
@@ -159,7 +153,7 @@ class LoadProfileAnalyzer:
                 name="PV",
                 commodity="energy",
                 hasCapacityVariable=True,
-                operationRateMax=solar_df,
+                operationRateMax=self.solar_timeseries,
                 capacityMax=self.max_pv_system_size_kwp,
                 investPerCapacity=self.pv_system_cost_per_kwp,
                 interestRate=self.interest_rate,

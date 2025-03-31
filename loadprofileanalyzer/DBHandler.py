@@ -116,6 +116,7 @@ class DatabaseHandler:
         keys_to_exclude = [
             "consumption_timeseries",
             "price_timeseries",
+            "solar_timeseries",
             "db_uri",
             "overwrite_price_timeseries",
             "overwrite_existing_optimization",

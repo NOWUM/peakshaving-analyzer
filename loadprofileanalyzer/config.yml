@@ -7,7 +7,9 @@ optimization_parameters:
   hours_per_timestep: 0.25    # in 15-minute timesteps
 
   add_storage: True   # wether to add storage to optimization or not
-  add_solar: False    # wether to add pv system to optimization or not
+  add_solar: True    # wether to add pv system to optimization or not
+
+  postal_code: 52066
 
   auto_opt: True    # Wether to automatically start optizmization or not
 

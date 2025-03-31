@@ -100,9 +100,17 @@ class Config:
         url += f"&timezone=auto&format=json"
         data = requests.get(url).json()
 
+        log.info("Got data from brightsky")
+
         # put data in dataframe
-        df = pd.DataFrame(data["weather"][["solar"]])
+        df = pd.DataFrame(data["weather"])[["solar"]]
 
-        # TODO
+        # rename to location in ESM, add grid column with no operation possible
+        df.rename(columns={"solar": "consumption_site"}, inplace=True)
+        df["grid"] = 0
+
         # convert from kWh/m2 to kW
+        # kWh/m2/h = kW/m2 = 1000W/m2
+        # no converseion necessary, as solar modules are tested with 1000W/m2
 
+        return df.head()

@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS optimization_parameters (
     name TEXT PRIMARY KEY,
     hours_per_timestep FLOAT NOT NULL,
+    postal_code INTEGER NOT NULL,
     add_storage BOOL NOT NULL,
     add_solar BOOL NOT NULL,
     producer_energy_price FLOAT NOT NULL,
