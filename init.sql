@@ -39,6 +39,13 @@ CREATE TABLE IF NOT EXISTS price_timeseries (
     PRIMARY KEY (name, timestep)
 );
 
+CREATE TABLE IF NOT EXISTS solar_timeseries (
+    name TEXT NOT NULL,
+    timestep INTEGER NOT NULL,
+    solar_generation FLOAT NOT NULL,
+    PRIMARY KEY (name, timestep)
+);
+
 CREATE TABLE IF NOT EXISTS eco_results (
     name TEXT PRIMARY KEY,
     energy_costs_eur FLOAT NOT NULL,

@@ -17,6 +17,7 @@ TABLES = [
     "optimization_parameters",
     "consumption_timeseries",
     "price_timeseries",
+    "solar_timeseries",
     "tech_results",
     "eco_results"]
 
@@ -104,6 +105,10 @@ class DatabaseHandler:
         self.save_config()
         self.save_consumption_timeseries()
         self.save_price_timeseries()
+
+        if self.config.add_solar:
+            self.save_solar_timeseries()
+
         self.save_opti_data()
 
         log.info("All data saved to database.")
@@ -160,6 +165,22 @@ class DatabaseHandler:
 
         # write to sql
         self._df_to_sql(price_df, "price_timeseries")
+
+
+    def save_solar_timeseries(self) -> None:
+        """Writes the solar data to the database.
+        """
+        log.info("Saving solar data to database.")
+
+        # create DataFrame from config
+        solar_df = deepcopy(self.config.solar_timeseries)
+        solar_df["timestep"] = np.arange(len(solar_df))
+        solar_df["name"] = self.name
+        solar_df.rename(columns={"consumption_site": "solar_generation"}, inplace=True)
+        solar_df = solar_df[["name", "timestep", "solar_generation"]]
+
+        # write to sql
+        self._df_to_sql(solar_df, "solar_timeseries")
 
 
     def _get_val_from_sum(
@@ -243,5 +264,5 @@ class DatabaseHandler:
         eco_df["total_costs_eur"] = eco_df.drop(columns="name").sum(axis=1)
 
         # write to sql
-        self._df_to_sql(eco_df, "economical")
-        self._df_to_sql(tech_df, "technical")
+        self._df_to_sql(eco_df, "eco_results")
+        self._df_to_sql(tech_df, "tech_results")
