@@ -15,9 +15,7 @@ log = logging.getLogger("DatabaseHandler")
 
 TABLES = [
     "input.parameters",
-    "input.consumption_timeseries",
-    "input.price_timeseries",
-    "input.solar_timeseries",
+    "input.timeseries",
     "output.tech",
     "output.eco"]
 
@@ -108,12 +106,7 @@ class DatabaseHandler:
         """
         log.info("Saving all data to database.")
         self.save_config()
-        self.save_consumption_timeseries()
-        self.save_price_timeseries()
-
-        if self.config.add_solar:
-            self.save_solar_timeseries()
-
+        self.save_timeseries()
         self.save_opti_data()
 
         log.info("All data saved to database.")
@@ -143,50 +136,25 @@ class DatabaseHandler:
         self._df_to_sql(config_df, "parameters", "input")
 
 
-    def save_consumption_timeseries(self) -> None:
+    def save_timeseries(self) -> None:
         """Writes the consumption data to the database.
         """
         log.info("Saving consumption data to database.")
 
         # create DataFrame from config
-        consumption_df = pd.DataFrame(self.config.consumption_timeseries)
-        consumption_df["timestamp"] = self.config.timestamps
-        consumption_df["name"] = self.name
+        df = pd.DataFrame()
+        df["timestamp"] = self.config.timestamps
+        df["name"] = self.name
+        df["consumption_kwh"] = self.config.consumption_timeseries
+        df["price_eur"] = self.config.price_timeseries["grid"]
+
+        if self.config.add_solar:
+            df["solar_generation"] = self.config.solar_timeseries["consumption_site"]
+        else:
+            df["solar_generation"] = 0
 
         # write to sql
-        self._df_to_sql(consumption_df, "consumption_timeseries", "input")
-
-
-    def save_price_timeseries(self) -> None:
-        """Writes the price data to the database.
-        """
-        log.info("Saving price data to database.")
-
-        # create DataFrame from config
-        price_df = deepcopy(self.config.price_timeseries)
-        price_df["timestamp"] = self.config.timestamps
-        price_df["name"] = self.name
-        price_df.rename(columns={"grid": "price"}, inplace=True)
-        price_df = price_df[["name", "timestamp", "price"]]
-
-        # write to sql
-        self._df_to_sql(price_df, "price_timeseries", "input")
-
-
-    def save_solar_timeseries(self) -> None:
-        """Writes the solar data to the database.
-        """
-        log.info("Saving solar data to database.")
-
-        # create DataFrame from config
-        solar_df = deepcopy(self.config.solar_timeseries)
-        solar_df["timestamp"] = self.config.timestamps
-        solar_df["name"] = self.name
-        solar_df.rename(columns={"consumption_site": "solar_generation"}, inplace=True)
-        solar_df = solar_df[["name", "timestamp", "solar_generation"]]
-
-        # write to sql
-        self._df_to_sql(solar_df, "solar_timeseries", "input")
+        self._df_to_sql(df, "timeseries", "input")
 
 
     def _get_val_from_sum(

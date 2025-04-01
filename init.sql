@@ -31,23 +31,11 @@ CREATE TABLE IF NOT EXISTS input.parameters (
     leap_year BOOL NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS input.consumption_timeseries (
+CREATE TABLE IF NOT EXISTS input.timeseries (
     name TEXT NOT NULL,
     timestamp timestamptz NOT NULL,
-    consumption FLOAT NOT NULL,
-    PRIMARY KEY (name, timestamp)
-);
-
-CREATE TABLE IF NOT EXISTS input.price_timeseries (
-    name TEXT NOT NULL,
-    timestamp timestamptz NOT NULL,
-    price FLOAT NOT NULL,
-    PRIMARY KEY (name, timestamp)
-);
-
-CREATE TABLE IF NOT EXISTS input.solar_timeseries (
-    name TEXT NOT NULL,
-    timestamp timestamptz NOT NULL,
+    consumption_kwh FLOAT NOT NULL,
+    price_eur FLOAT NOT NULL,
     solar_generation FLOAT NOT NULL,
     PRIMARY KEY (name, timestamp)
 );

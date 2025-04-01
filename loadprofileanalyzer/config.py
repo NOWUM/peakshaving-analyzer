@@ -105,7 +105,7 @@ class Config:
         df.rename(columns={cons_values.get('value_column'): "consumption"}, inplace=True)
         log.info("Consumption timeseries loaded.")
 
-        return df["consumption"].head(10)
+        return df["consumption"]
 
 
     def _assume_year(self):
@@ -205,7 +205,7 @@ class Config:
         df["consumption_site"] = 0
         log.info("Price timeseries successfully read and processed.")
 
-        return df[["consumption_site", "grid"]].head(10)
+        return df[["consumption_site", "grid"]]
 
 
     def create_price_timeseries(self):
