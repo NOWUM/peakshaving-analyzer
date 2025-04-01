@@ -13,6 +13,13 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./data/database:/var/lib/postgresql/data
 
+  grafana:
+    image: grafana/grafana-oss
+    container_name: lpa_dashboard
+    restart: always
+    ports:
+      - "3000:3000"
+
   pgadmin_service:
     image: dpage/pgadmin4:latest
     container_name: lpa_pgadmin
