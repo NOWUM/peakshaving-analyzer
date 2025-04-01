@@ -4,6 +4,7 @@ import pandas as pd
 import pgeocode
 from datetime import datetime
 import requests
+import calendar
 
 
 import logging
@@ -66,6 +67,9 @@ class Config:
         if self.verbose:
             log.setLevel(logging.INFO)
 
+        self.n_timesteps = len(self.consumption_timeseries)
+        self.leap_year = self.detect_leap_year()
+
         self.price_timeseries = self.read_price_timeseries(config=config)
 
         if self.overwrite_price_timeseries:
@@ -80,6 +84,8 @@ class Config:
             else:
                 log.info("Reading solar timeseries from CSV file.")
                 self.solar_timeseries = self.read_solar_timeseries(config=config)
+
+        self.check_timeseries_length()
 
         log.info("Config class initialized successfully.")
 
@@ -98,8 +104,20 @@ class Config:
         log.info("Price timeseries successfully read and processed.")
 
         return df
-    
 
+
+    def detect_leap_year(self):
+        """
+        Detect if given timeseries is a leap year.
+
+        Returns:
+            bool: True if the current year is a leap year, False otherwise.
+        """
+
+        return self.n_timesteps / self.hours_per_timestep == 8784
+
+
+    # TODO: resampling timeseries to match hours per timestep
     def fetch_solar_timeseries(self):
         """
         Read the solar timeseries from brightsky.
@@ -114,8 +132,16 @@ class Config:
         lat, lon = q["latitude"], q["longitude"]
         log.info(f"Coordinates for postal code {self.postal_code}: Latitude={lat}, Longitude={lon}")
 
-        # make API Call
+        # adjust year for fetching weather data depending on leap year or not
         year = datetime.now().year - 1
+        if self.leap_year:
+            while not calendar.isleap(year):
+                year -= 1
+        else:
+            while calendar.isleap(year):
+                year -= 1
+
+        # make API Call
         url = f"https://api.brightsky.dev/weather?lat={lat}&lon={lon}&country=DE"
         url += f"&date={year}-01-01T00:00:00&last_date={year}-12-31T23:45:00"
         url += f"&timezone=auto&format=json"
@@ -130,6 +156,15 @@ class Config:
         df.rename(columns={"solar": "consumption_site"}, inplace=True)
         df["grid"] = 0
 
+        # resample to match hours per timestep
+        df["timestamp"] = pd.date_range(
+            start=f"{year}-01-01",
+            periods=len(df),
+            freq=f"{self.hours_per_timestep}H")
+        df.resample(rule=f"{self.hours_per_timestep}H", on="timestamp").mean()
+        df.reset_index(drop=True, inplace=True)
+        df = df[["grid", "consumption_site"]]
+
         # convert from kWh/m2 to kW
         # kWh/m2/h = kW/m2 = 1000W/m2
         # no converseion necessary, as solar modules are tested with 1000W/m2
@@ -137,6 +172,7 @@ class Config:
         return df
 
 
+    # TODO: resampling timeseries to match hours per timestep
     def read_solar_timeseries(self, config):
         """
         Read the solar timeseries from the specified CSV file.
@@ -151,3 +187,20 @@ class Config:
         log.info("Solar timeseries successfully read and processed.")
 
         return df
+
+
+    def check_timeseries_length(self):
+        """
+        Check if the length of the consumption and price timeseries matches the expected number of timesteps.
+
+        Raises:
+            ValueError: If the length of the timeseries does not match.
+        """
+        log.info("Checking length of timeseries.")
+        if len(self.consumption_timeseries) != self.n_timesteps:
+            raise ValueError("Length of consumption timeseries does not match expected number of timesteps.")
+        if len(self.price_timeseries) != self.n_timesteps:
+            raise ValueError("Length of price timeseries does not match expected number of timesteps.")
+        if hasattr(self, 'solar_timeseries') and len(self.solar_timeseries) != self.n_timesteps:
+            raise ValueError("Length of solar timeseries does not match expected number of timesteps.")
+        log.info("Timeseries length check passed.")

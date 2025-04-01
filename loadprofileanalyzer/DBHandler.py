@@ -14,12 +14,12 @@ log = logging.getLogger("DatabaseHandler")
 
 
 TABLES = [
-    "optimization_parameters",
-    "consumption_timeseries",
-    "price_timeseries",
-    "solar_timeseries",
-    "tech_results",
-    "eco_results"]
+    "input.parameters",
+    "input.consumption_timeseries",
+    "input.price_timeseries",
+    "input.solar_timeseries",
+    "output.tech",
+    "output.eco"]
 
 class DatabaseHandler:
 
@@ -76,6 +76,7 @@ class DatabaseHandler:
             self,
             df: pd.DataFrame,
             table_name: str,
+            schema: str,
     ) -> None:
         """Writes a DataFrame to the database.
 
@@ -87,6 +88,7 @@ class DatabaseHandler:
         try:
             df.to_sql(
                 name=table_name,
+                schema=schema,
                 con=self.engine,
                 if_exists="append",
                 index=False,
@@ -134,7 +136,7 @@ class DatabaseHandler:
         config_df = pd.DataFrame(conf_to_save, index=[0])
 
         # write to sql
-        self._df_to_sql(config_df, "optimization_parameters")
+        self._df_to_sql(config_df, "parameters", "input")
 
 
     def save_consumption_timeseries(self) -> None:
@@ -148,7 +150,7 @@ class DatabaseHandler:
         consumption_df["name"] = self.name
 
         # write to sql
-        self._df_to_sql(consumption_df, "consumption_timeseries")
+        self._df_to_sql(consumption_df, "consumption_timeseries", "input")
 
 
     def save_price_timeseries(self) -> None:
@@ -164,7 +166,7 @@ class DatabaseHandler:
         price_df = price_df[["name", "timestep", "price"]]
 
         # write to sql
-        self._df_to_sql(price_df, "price_timeseries")
+        self._df_to_sql(price_df, "price_timeseries", "input")
 
 
     def save_solar_timeseries(self) -> None:
@@ -180,7 +182,7 @@ class DatabaseHandler:
         solar_df = solar_df[["name", "timestep", "solar_generation"]]
 
         # write to sql
-        self._df_to_sql(solar_df, "solar_timeseries")
+        self._df_to_sql(solar_df, "solar_timeseries", "input")
 
 
     def _get_val_from_sum(
@@ -264,5 +266,5 @@ class DatabaseHandler:
         eco_df["total_costs_eur"] = eco_df.drop(columns="name").sum(axis=1)
 
         # write to sql
-        self._df_to_sql(eco_df, "eco_results")
-        self._df_to_sql(tech_df, "tech_results")
+        self._df_to_sql(eco_df, "eco", "output")
+        self._df_to_sql(tech_df, "tech", "output")

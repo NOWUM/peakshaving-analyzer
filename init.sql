@@ -1,6 +1,10 @@
-CREATE TABLE IF NOT EXISTS optimization_parameters (
+CREATE SCHEMA IF NOT EXISTS input;
+CREATE SCHEMA IF NOT EXISTS output;
+
+CREATE TABLE IF NOT EXISTS input.parameters (
     name TEXT PRIMARY KEY,
     hours_per_timestep FLOAT NOT NULL,
+    n_timesteps INTEGER NOT NULL,
     postal_code INTEGER NOT NULL,
     add_storage BOOL NOT NULL,
     add_solar BOOL NOT NULL,
@@ -22,31 +26,32 @@ CREATE TABLE IF NOT EXISTS optimization_parameters (
     storage_discharge_rate FLOAT NOT NULL,
     inverter_efficiency FLOAT NOT NULL,
     pv_system_kwp_per_m2 FLOAT NOT NULL,
-    solver TEXT NOT NULL
+    solver TEXT NOT NULL,
+    leap_year BOOL NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS consumption_timeseries (
+CREATE TABLE IF NOT EXISTS input.consumption_timeseries (
     name TEXT NOT NULL,
     timestep INTEGER NOT NULL,
     consumption FLOAT NOT NULL,
     PRIMARY KEY (name, timestep)
 );
 
-CREATE TABLE IF NOT EXISTS price_timeseries (
+CREATE TABLE IF NOT EXISTS input.price_timeseries (
     name TEXT NOT NULL,
     timestep INTEGER NOT NULL,
     price FLOAT NOT NULL,
     PRIMARY KEY (name, timestep)
 );
 
-CREATE TABLE IF NOT EXISTS solar_timeseries (
+CREATE TABLE IF NOT EXISTS input.solar_timeseries (
     name TEXT NOT NULL,
     timestep INTEGER NOT NULL,
     solar_generation FLOAT NOT NULL,
     PRIMARY KEY (name, timestep)
 );
 
-CREATE TABLE IF NOT EXISTS eco_results (
+CREATE TABLE IF NOT EXISTS output.eco (
     name TEXT PRIMARY KEY,
     energy_costs_eur FLOAT NOT NULL,
     grid_energy_costs_eur FLOAT NOT NULL,
@@ -60,7 +65,7 @@ CREATE TABLE IF NOT EXISTS eco_results (
     total_costs_eur FLOAT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS tech_results (
+CREATE TABLE IF NOT EXISTS output.tech (
     name TEXT PRIMARY KEY,
     grid_capacity_kw FLOAT NOT NULL,
     storage_capacity_kwh FLOAT NOT NULL,
