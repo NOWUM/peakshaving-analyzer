@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS input.parameters (
     inverter_efficiency FLOAT NOT NULL,
     pv_system_kwp_per_m2 FLOAT NOT NULL,
     solver TEXT NOT NULL,
+    assumed_year INTEGER NOT NULL,
     leap_year BOOL NOT NULL
 );
 

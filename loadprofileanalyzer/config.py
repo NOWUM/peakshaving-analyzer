@@ -24,10 +24,6 @@ class Config:
             config = yaml.safe_load(file)
         log.info("Configuration file loaded successfully.")
 
-        cons_values = config.get('consumption_timeseries')
-        self.consumption_timeseries = pd.read_csv(cons_values.get('file_path'))[cons_values.get('value_column')]
-        log.info("Consumption timeseries loaded.")
-
         opti_values = config.get('optimization_parameters')
         self.name = opti_values.get('name')
         self.db_uri = opti_values.get('db_uri')
@@ -67,14 +63,17 @@ class Config:
         if self.verbose:
             log.setLevel(logging.INFO)
 
+        self.consumption_timeseries = self.read_consumption_timeseries(config=config)
+
         self.n_timesteps = len(self.consumption_timeseries)
         self.leap_year = self.detect_leap_year()
+        self.assumed_year = self._assume_year()
 
-        self.price_timeseries = self.read_price_timeseries(config=config)
 
         if self.overwrite_price_timeseries:
-            self.price_timeseries['grid'] = self.producer_energy_price
-            log.info("Price timeseries overwritten with producer energy price.")
+            self.price_timeseries = self.create_price_timeseries()
+        else:
+            self.price_timeseries = self.read_price_timeseries(config=config)
 
         if self.add_solar:
             self.postal_code = config.get('solar_timeseries').get('postal_code')
@@ -88,6 +87,126 @@ class Config:
         self.check_timeseries_length()
 
         log.info("Config class initialized successfully.")
+
+
+    def read_consumption_timeseries(self, config):
+        """Reads consumption timeseries from given file
+
+        Returns:
+            pd.Series: the consumption timeseries.
+        """
+
+        log.info("Reading consumption timeseries")
+
+        cons_values = config.get('consumption_timeseries')
+        path = cons_values.get('file_path')
+        df = pd.read_csv(path)
+        df.rename(columns={cons_values.get('value_column'): "consumption"}, inplace=True)
+        log.info("Consumption timeseries loaded.")
+
+        return df["consumption"]
+
+
+    def _assume_year(self):
+        """Assumes year for given timeseries.
+
+        Returns:
+            int: the assumed year
+        """
+
+        log.info("Assuming year.")
+        year = datetime.now().year - 1
+        if self.leap_year:
+            while not calendar.isleap(year):
+                year -= 1
+        else:
+            while calendar.isleap(year):
+                year -= 1
+
+        log.info(f"Assumed year to be {year}.")
+
+        return year
+
+
+    def create_price_timeseries(self):
+        """Creates price timeseries from year and given fixed price.
+
+        Returns:
+            pd.Series: The price timeseries
+        """
+
+        log.info("Creating price timeseries from fixed price.")
+        df = pd.DataFrame()
+        
+        year = datetime.now().year - 1
+        if self.leap_year:
+            while not calendar.isleap(year):
+                year -= 1
+        else:
+            while calendar.isleap(year):
+                year -= 1
+
+        df["timestamp"] = pd.date_range(
+            f"{year}-01-01",
+            freq=f"{self.hours_per_timestep}H",
+            periods=self.n_timesteps)
+        df["grid"] = self.producer_energy_price
+        df["consumption_site"] = 0
+
+        df = df[["grid", "consumption_site"]]
+
+        log.info("Price timeseries successfully created.")
+
+        return df
+
+
+    def _resample_dataframe(self, df: pd.DataFrame):
+        """Resamples given dataframe for provided details.
+
+        Args:
+            df (pd.DataFrame): The dataframe to resample.
+
+        Returns:
+            pd.DataFrame: the resampled dataframe.
+        """
+
+        log.info("Resampling solar timeseries to match your specifications")
+
+        df["timestamp"] = pd.date_range(
+            start=f"{self.assumed_year}-01-01",
+            periods=len(df),
+            freq="H")
+
+        # upsample
+        if self.hours_per_timestep < 1:
+
+            # set index as needed for upsamling
+            df.set_index("timestamp", inplace=True)
+
+            # upsample using forward filling
+            df = df.resample(rule=f"{self.hours_per_timestep}H", origin="start_day").ffill()
+
+            # the last three quarter hours are missing as original timeseries ends on
+            # Dec. 12th 23:00 and not 24:00 / Dec. 13th 00:00
+            # so we reindex to include the missing timestamps
+            df = df.reindex(labels=pd.date_range(
+                start=f"{self.assumed_year}",
+                periods=self.n_timesteps,
+                freq=f"{self.hours_per_timestep}H"))
+
+            # and fill the newly created timestamps
+            df.fillna(method="ffill", inplace=True)
+
+        # downsample
+        else:
+            # resample
+            df = df.resample(rule=f"{self.hours_per_timestep}H", on="timestamp").mean()
+
+        df.reset_index(drop=True, inplace=True)
+
+        log.info("Successfully resampled solar timeseries.")
+
+        return df
 
 
     def read_price_timeseries(self, config):
@@ -114,10 +233,9 @@ class Config:
             bool: True if the current year is a leap year, False otherwise.
         """
 
-        return self.n_timesteps / self.hours_per_timestep == 8784
+        return self.n_timesteps * self.hours_per_timestep == 8784
 
 
-    # TODO: resampling timeseries to match hours per timestep
     def fetch_solar_timeseries(self):
         """
         Read the solar timeseries from brightsky.
@@ -132,18 +250,9 @@ class Config:
         lat, lon = q["latitude"], q["longitude"]
         log.info(f"Coordinates for postal code {self.postal_code}: Latitude={lat}, Longitude={lon}")
 
-        # adjust year for fetching weather data depending on leap year or not
-        year = datetime.now().year - 1
-        if self.leap_year:
-            while not calendar.isleap(year):
-                year -= 1
-        else:
-            while calendar.isleap(year):
-                year -= 1
-
         # make API Call
         url = f"https://api.brightsky.dev/weather?lat={lat}&lon={lon}&country=DE"
-        url += f"&date={year}-01-01T00:00:00&last_date={year}-12-31T23:45:00"
+        url += f"&date={self.assumed_year}-01-01T00:00:00&last_date={self.assumed_year}-12-31T23:45:00"
         url += f"&timezone=auto&format=json"
         log.info(f"Making API call to: {url}")
         data = requests.get(url).json()
@@ -157,13 +266,8 @@ class Config:
         df["grid"] = 0
 
         # resample to match hours per timestep
-        df["timestamp"] = pd.date_range(
-            start=f"{year}-01-01",
-            periods=len(df),
-            freq=f"{self.hours_per_timestep}H")
-        df.resample(rule=f"{self.hours_per_timestep}H", on="timestamp").mean()
-        df.reset_index(drop=True, inplace=True)
-        df = df[["grid", "consumption_site"]]
+        if self.hours_per_timestep != 1:
+            df = self._resample_dataframe(df)
 
         # convert from kWh/m2 to kW
         # kWh/m2/h = kW/m2 = 1000W/m2
@@ -198,9 +302,15 @@ class Config:
         """
         log.info("Checking length of timeseries.")
         if len(self.consumption_timeseries) != self.n_timesteps:
-            raise ValueError("Length of consumption timeseries does not match expected number of timesteps.")
+            msg = "Length of consumption timeseries does not match expected number of timesteps. "
+            msg += f"Expected number of timesteps: {self.n_timesteps}, given timesteps: {len(self.consumption_timeseries)}"
+            raise ValueError(msg)
         if len(self.price_timeseries) != self.n_timesteps:
-            raise ValueError("Length of price timeseries does not match expected number of timesteps.")
+            msg = "Length of price timeseries does not match expected number of timesteps. "
+            msg += f"Expected number of timesteps: {self.n_timesteps}, given timesteps: {len(self.price_timeseries)}"
+            raise ValueError(msg)
         if hasattr(self, 'solar_timeseries') and len(self.solar_timeseries) != self.n_timesteps:
-            raise ValueError("Length of solar timeseries does not match expected number of timesteps.")
+            msg = "Length of solar timeseries does not match expected number of timesteps. "
+            msg += f"Expected number of timesteps: {self.n_timesteps}, given timesteps: {len(self.solar_timeseries)}"
+            raise ValueError(msg)
         log.info("Timeseries length check passed.")
