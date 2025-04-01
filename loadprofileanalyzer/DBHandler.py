@@ -33,6 +33,9 @@ class DatabaseHandler:
         self.esm = esm
         self.engine = sqlalchemy.create_engine(config.db_uri)
 
+        if self.config.verbose:
+            log.setLevel(logging.INFO)
+
         self.name = deepcopy(config.name)
         self.overwrite_existing = deepcopy(config.overwrite_existing_optimization)
 
