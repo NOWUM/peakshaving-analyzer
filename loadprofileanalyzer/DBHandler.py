@@ -93,11 +93,11 @@ class DatabaseHandler:
                 if_exists="append",
                 index=False,
             )
-            log.info(f"DataFrame written to {table_name} table in database.")
+            log.info(f"DataFrame written to {schema}.{table_name} table in database.")
         except IntegrityError as uv:
             log.error("Optimization already exist! To overwrite, set overwrite_existing_optimization to True.")
         except Exception as e:
-            log.error(f"Error writing DataFrame to {table_name} table in database: {e}")
+            log.error(f"Error writing DataFrame to {schema}.{table_name} table in database: {e}")
 
 
     def save_all(self) -> None:
@@ -122,6 +122,7 @@ class DatabaseHandler:
 
         # remove unnecessary keys from config
         keys_to_exclude = [
+            "timestamps",
             "consumption_timeseries",
             "price_timeseries",
             "solar_timeseries",
@@ -146,7 +147,7 @@ class DatabaseHandler:
 
         # create DataFrame from config
         consumption_df = pd.DataFrame(self.config.consumption_timeseries)
-        consumption_df["timestep"] = np.arange(len(consumption_df))
+        consumption_df["timestamp"] = self.config.timestamps
         consumption_df["name"] = self.name
 
         # write to sql
@@ -160,10 +161,10 @@ class DatabaseHandler:
 
         # create DataFrame from config
         price_df = deepcopy(self.config.price_timeseries)
-        price_df["timestep"] = np.arange(len(price_df))
+        price_df["timestamp"] = self.config.timestamps
         price_df["name"] = self.name
         price_df.rename(columns={"grid": "price"}, inplace=True)
-        price_df = price_df[["name", "timestep", "price"]]
+        price_df = price_df[["name", "timestamp", "price"]]
 
         # write to sql
         self._df_to_sql(price_df, "price_timeseries", "input")
@@ -176,10 +177,10 @@ class DatabaseHandler:
 
         # create DataFrame from config
         solar_df = deepcopy(self.config.solar_timeseries)
-        solar_df["timestep"] = np.arange(len(solar_df))
+        solar_df["timestamp"] = self.config.timestamps
         solar_df["name"] = self.name
         solar_df.rename(columns={"consumption_site": "solar_generation"}, inplace=True)
-        solar_df = solar_df[["name", "timestep", "solar_generation"]]
+        solar_df = solar_df[["name", "timestamp", "solar_generation"]]
 
         # write to sql
         self._df_to_sql(solar_df, "solar_timeseries", "input")
@@ -258,9 +259,18 @@ class DatabaseHandler:
             location="consumption_site")
 
         # solar data
-        eco_df["solar_invest_eur"] = 0
-        eco_df["solar_annuity_eur"] = 0
-        tech_df["solar_capacity_kwp"] = 0
+        eco_df["solar_invest_eur"] = self._get_val_from_sum(
+            model_name="SourceSinkModel",
+            index=("PV", "invest", "[Euro]"),
+            location="consumption_site")
+        eco_df["solar_annuity_eur"] = self._get_val_from_sum(
+            model_name="SourceSinkModel",
+            index=("PV", "TAC", "[Euro/a]"),
+            location="consumption_site")
+        tech_df["solar_capacity_kwp"] = self._get_val_from_sum(
+            model_name="SourceSinkModel",
+            index=("PV", "capacity", "[kWh]"),
+            location="consumption_site")
 
         # calculate total costs
         eco_df["total_costs_eur"] = eco_df.drop(columns="name").sum(axis=1)

@@ -68,6 +68,7 @@ class Config:
         self.n_timesteps = len(self.consumption_timeseries)
         self.leap_year = self.detect_leap_year()
         self.assumed_year = self._assume_year()
+        self.timestamps = self._create_timestamps()
 
 
         if self.overwrite_price_timeseries:
@@ -104,7 +105,7 @@ class Config:
         df.rename(columns={cons_values.get('value_column'): "consumption"}, inplace=True)
         log.info("Consumption timeseries loaded.")
 
-        return df["consumption"]
+        return df["consumption"].head(10)
 
 
     def _assume_year(self):
@@ -128,36 +129,18 @@ class Config:
         return year
 
 
-    def create_price_timeseries(self):
-        """Creates price timeseries from year and given fixed price.
+    def _create_timestamps(self) -> pd.Series:
+        """Creates timestamps from given information
 
         Returns:
-            pd.Series: The price timeseries
+            pd.Series: The timestamps
         """
 
-        log.info("Creating price timeseries from fixed price.")
-        df = pd.DataFrame()
-        
-        year = datetime.now().year - 1
-        if self.leap_year:
-            while not calendar.isleap(year):
-                year -= 1
-        else:
-            while calendar.isleap(year):
-                year -= 1
-
-        df["timestamp"] = pd.date_range(
-            f"{year}-01-01",
+        return pd.date_range(
+            start=f"{self.assumed_year}-01-01",
+            periods=self.n_timesteps,
             freq=f"{self.hours_per_timestep}H",
-            periods=self.n_timesteps)
-        df["grid"] = self.producer_energy_price
-        df["consumption_site"] = 0
-
-        df = df[["grid", "consumption_site"]]
-
-        log.info("Price timeseries successfully created.")
-
-        return df
+            tz="UTC")
 
 
     def _resample_dataframe(self, df: pd.DataFrame):
@@ -222,7 +205,37 @@ class Config:
         df["consumption_site"] = 0
         log.info("Price timeseries successfully read and processed.")
 
-        return df
+        return df[["consumption_site", "grid"]].head(10)
+
+
+    def create_price_timeseries(self):
+        """Creates price timeseries from year and given fixed price.
+
+        Returns:
+            pd.Series: The price timeseries
+        """
+
+        log.info("Creating price timeseries from fixed price.")
+        df = pd.DataFrame()
+
+        year = datetime.now().year - 1
+        if self.leap_year:
+            while not calendar.isleap(year):
+                year -= 1
+        else:
+            while calendar.isleap(year):
+                year -= 1
+
+        df["timestamp"] = pd.date_range(
+            f"{year}-01-01",
+            freq=f"{self.hours_per_timestep}H",
+            periods=self.n_timesteps)
+        df["grid"] = self.producer_energy_price
+        df["consumption_site"] = 0
+
+        log.info("Price timeseries successfully created.")
+
+        return df[["grid", "consumption_site"]]
 
 
     def detect_leap_year(self):
@@ -269,6 +282,8 @@ class Config:
         if self.hours_per_timestep != 1:
             df = self._resample_dataframe(df)
 
+        df["consumption_site"] = 1
+
         # convert from kWh/m2 to kW
         # kWh/m2/h = kW/m2 = 1000W/m2
         # no converseion necessary, as solar modules are tested with 1000W/m2
@@ -276,7 +291,6 @@ class Config:
         return df
 
 
-    # TODO: resampling timeseries to match hours per timestep
     def read_solar_timeseries(self, config):
         """
         Read the solar timeseries from the specified CSV file.
