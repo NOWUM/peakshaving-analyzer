@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loadprofile-analyzer"
+version = "0.0.1"
+description = "LPA"
+authors = [{ name = "NOWUM Developers", email = "contact@nowum.de"}]
+license = "AGPL-3.0-or-later"
+readme = "README.md"
+keywords = ["load profiles", "energy market", "energy optimization", "simulation"]
+
+classifiers=[
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Framework :: AsyncIO",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy >=1.26.4",
+    "python-dateutil >=2.8.2",
+    "sqlalchemy >=2.0.9",
+    "pandas >=2.0.0",
+    "psycopg2-binary >=2.9.5",
+    "pyyaml >=6.0",
+    "pyyaml-include >=2.2a",
+    "pyomo >=6.8.0",
+    "highspy",
+    "gurobipy",
+]
+
+[tool.setuptools.packages.find]
+exclude = ["data*", "examples*"]
+include = ["loadprofileanalyzer*"]
