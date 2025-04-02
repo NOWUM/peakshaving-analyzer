@@ -61,6 +61,7 @@ class Config:
         self.solver = config.get('solver', 'appsi_highs')
 
         if self.verbose:
+            logging.basicConfig(level=logging.INFO)
             log.setLevel(logging.INFO)
 
         self.consumption_timeseries = self.read_consumption_timeseries(config=config)
@@ -75,6 +76,8 @@ class Config:
             self.price_timeseries = self.create_price_timeseries()
         else:
             self.price_timeseries = self.read_price_timeseries(config=config)
+
+        self.adjust_price_timeseries()
 
         if self.add_solar:
             self.postal_code = config.get('solar_timeseries').get('postal_code')
@@ -200,7 +203,7 @@ class Config:
             pd.Series: The price timeseries.
         """
         log.info("Reading price timeseries from CSV file.")
-        df = pd.read_csv(config.get('price_timeseries').get('file_path'), index_col=0)
+        df = pd.read_csv(config.get('price_timeseries').get('file_path'))
         df.rename(columns={config.get('price_timeseries').get('value_column'): 'grid'}, inplace=True)
         df["consumption_site"] = 0
         log.info("Price timeseries successfully read and processed.")
@@ -236,6 +239,18 @@ class Config:
         log.info("Price timeseries successfully created.")
 
         return df[["grid", "consumption_site"]]
+
+
+    def adjust_price_timeseries(self):
+        """Removes negative values from price timeseries
+        """
+
+        if len(self.price_timeseries[self.price_timeseries < 0]) > 0:
+            msg = f"We can't integrate negative prices yet. We set the "
+            msg += f"negative prices in your price timeseries to 0."
+            log.warning(msg)
+
+        self.price_timeseries[self.price_timeseries < 0] = 0
 
 
     def detect_leap_year(self):
@@ -281,8 +296,6 @@ class Config:
         # resample to match hours per timestep
         if self.hours_per_timestep != 1:
             df = self._resample_dataframe(df)
-
-        df["consumption_site"] = 1
 
         # convert from kWh/m2 to kW
         # kWh/m2/h = kW/m2 = 1000W/m2

@@ -32,6 +32,7 @@ class DatabaseHandler:
         self.engine = sqlalchemy.create_engine(config.db_uri)
 
         if self.config.verbose:
+            logging.basicConfig(level=logging.INFO)
             log.setLevel(logging.INFO)
 
         self.name = deepcopy(config.name)

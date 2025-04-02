@@ -1,20 +1,20 @@
 optimization_parameters:
   name: example_optimization    # name of the optimization
 
-  db_uri: postgresql://postgres:postgres@lpa_database:5432/lpa    # database connection string
+  db_uri: postgresql://postgres:postgres@localhost:5432/lpa    # database connection string
   overwrite_existing_optimization: True                         # Wether to overwrite existing optimization or not
 
   hours_per_timestep: 0.25    # in 15-minute timesteps
 
   add_storage: True   # wether to add storage to optimization or not
-  add_solar: True    # wether to add pv system to optimization or not
+  add_solar: False    # wether to add pv system to optimization or not
 
   auto_opt: True    # Wether to automatically start optizmization or not
 
   verbose: True   # Wether to print optimization progress or not
 
 consumption_timeseries:
-  file_path: loadprofileanalyzer/consumptin.csv   # file path where consumption is stored as .csv
+  file_path: loadprofileanalyzer/consumption.csv   # file path where consumption is stored as .csv
   value_column: consumption                       # name of the column where consumption is provided
 
 price_timeseries:

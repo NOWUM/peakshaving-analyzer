@@ -73,7 +73,7 @@ class LoadProfileAnalyzer:
             logging.info("Added solar")
 
         if self.auto_opt:
-            self.optimize()
+            self.optimize(solver=self.solver)
             logging.info("Optimized")
 
             self.save_results(config)
@@ -210,13 +210,13 @@ class LoadProfileAnalyzer:
 
     def optimize(self, solver="appsi_highs"):
 
+        logging.info("Creating pyomo model.")
         self.esm.declareOptimizationProblem()
 
         # add constraint setting storage level on start
         # of optimization to zero
         if self.add_stor:
             self.esm.pyM.stateOfCharge_stor["consumption_site", "storage", 0, 0, 0].setub(0)
-
 
         logging.info("Optimizing. Depending on the given parameters and your setup, this may take a while.")
         self.esm.optimize(solver=solver, declaresOptimizationProblem=False)
