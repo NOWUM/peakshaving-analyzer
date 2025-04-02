@@ -1,7 +1,7 @@
 optimization_parameters:
-  name: example_optimization    # name of the optimization
+  name: storage_only_with_dyn_price    # name of the optimization
 
-  db_uri: postgresql://postgres:postgres@lpa_database:5432/lpa    # database connection string
+  db_uri: postgresql://postgres:postgres@localhost:5432/lpa    # database connection string
   overwrite_existing_optimization: True                         # Wether to overwrite existing optimization or not
 
   hours_per_timestep: 0.25    # in 15-minute timesteps
@@ -87,4 +87,4 @@ technical_parameters:
 
   pv_system_kwp_per_m2: 0.4   # energy obtainable per area in kWpeak per m²
 
-solver: "appsi_highs"  
+solver: "gurobi"
