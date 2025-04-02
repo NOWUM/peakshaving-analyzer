@@ -61,3 +61,15 @@ CREATE TABLE IF NOT EXISTS output.tech (
     inverter_capacity_kw FLOAT NOT NULL,
     solar_capacity_kwp FLOAT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS output.timeseries (
+    name TEXT NOT NULL,
+    timestamp timestamptz NOT NULL,
+    grid_usage_kw FLOAT,
+    storage_charge_kw FLOAT,
+    storage_discharge_kw FLOAT,
+    storage_soc_kwh FLOAT,
+    solar_generation_kw FLOAT,
+    consumption_kw FLOAT NOT NULL,
+    PRIMARY KEY (name, timestamp)
+);

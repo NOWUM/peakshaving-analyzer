@@ -6,7 +6,6 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 import fine as fn
 import pandas as pd
-import numpy as np
 
 from loadprofileanalyzer import Config
 
@@ -17,7 +16,8 @@ TABLES = [
     "input.parameters",
     "input.timeseries",
     "output.tech",
-    "output.eco"]
+    "output.eco",
+    "output.timeseries"]
 
 class DatabaseHandler:
 
@@ -106,8 +106,9 @@ class DatabaseHandler:
         """
         log.info("Saving all data to database.")
         self.save_config()
-        self.save_timeseries()
+        self.save_input_timeseries()
         self.save_opti_data()
+        self.save_output_timeseries()
 
         log.info("All data saved to database.")
 
@@ -136,7 +137,7 @@ class DatabaseHandler:
         self._df_to_sql(config_df, "parameters", "input")
 
 
-    def save_timeseries(self) -> None:
+    def save_input_timeseries(self) -> None:
         """Writes the consumption data to the database.
         """
         log.info("Saving consumption data to database.")
@@ -169,6 +170,77 @@ class DatabaseHandler:
             log.warning(f"KeyError: {index} not found in {model_name} model.")
             return 0.0
 
+
+    def _get_optimum_ts(
+            self,
+            model_name: str,
+            variable: str,
+            index: tuple[str]) -> pd.Series:
+        """Retrieves optimum timeseries from ESM.
+
+        Args:
+            model_name (str): Component model name.
+            variable (str): The variable to get.
+            index (tuple[str]): Index to use.
+
+        Returns:
+            pd.Series: Optimum timeseries
+        """
+
+        try:
+            mdl = self.esm.componentModelingDict[model_name]
+            vals_df = mdl.getOptimalValues(variable)["values"]
+
+            s = vals_df.loc[index]
+        except Exception as e:
+            print(model_name, variable, index)
+            raise e
+
+        return s
+
+
+    def save_output_timeseries(self):
+        """Writes optimum timeseries to database.
+        """
+
+        df = pd.DataFrame()
+        df["timestamp"] = self.config.timestamps
+        df["name"] = self.config.name
+
+        df["grid_usage_kw"] = self._get_optimum_ts(
+            model_name="SourceSinkModel",
+            variable="operationVariablesOptimum",
+            index=("grid", "grid"))
+
+        if self.config.add_storage:
+            df["storage_charge_kw"] = self._get_optimum_ts(
+                model_name="StorageModel",
+                variable="chargeOperationVariablesOptimum",
+                index=("storage", "consumption_site"))
+            df["storage_discharge_kw"] = self._get_optimum_ts(
+                model_name="StorageModel",
+                variable="dischargeOperationVariablesOptimum",
+                index=("storage", "consumption_site"))
+            df["storage_soc_kwh"] = self._get_optimum_ts(
+                model_name="StorageModel",
+                variable="stateOfChargeOperationVariablesOptimum",
+                index=("storage", "consumption_site"))
+        else:
+            df["storage_charge_kw"] = 0
+            df["storage_discharge_kw"] = 0
+            df["storage_soc_kwh"] = 0
+
+        if self.config.add_solar:
+            df["solar_generation_kw"] = self._get_optimum_ts(
+                model_name="SourceSinkModel",
+                variable="operationVariablesOptimum",
+                index=("PV", "consumption_site"))
+        else:
+            df["solar_generation_kw"] = 0
+
+        df["consumption_kw"] = self.config.consumption_timeseries
+
+        self._df_to_sql(df, "timeseries", "output")
 
     def save_opti_data(self) -> None:
         """Writes the data to the database.

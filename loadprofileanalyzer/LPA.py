@@ -179,6 +179,7 @@ class LoadProfileAnalyzer:
                 esM=self.esm,
                 name="storage",
                 commodity="stored_energy",
+                locationalEligibility=pd.Series([1, 0], index=["consumption_site", "grid"]),
                 hasCapacityVariable=True,
                 cyclicLifetime=10000,
                 chargeEfficiency=self.storage_charge_efficiency,
@@ -209,8 +210,16 @@ class LoadProfileAnalyzer:
 
     def optimize(self, solver="appsi_highs"):
 
+        self.esm.declareOptimizationProblem()
+
+        # add constraint setting storage level on start
+        # of optimization to zero
+        if self.add_stor:
+            self.esm.pyM.stateOfCharge_stor["consumption_site", "storage", 0, 0, 0].setub(0)
+
+
         logging.info("Optimizing. Depending on the given parameters and your setup, this may take a while.")
-        self.esm.optimize(solver=solver)
+        self.esm.optimize(solver=solver, declaresOptimizationProblem=False)
 
 
     def save_results(self, config):
