@@ -96,10 +96,12 @@ class DatabaseHandler:
                 index=False,
             )
             log.info(f"DataFrame written to {schema}.{table_name} table in database.")
-        except IntegrityError as uv:
-            log.error("Optimization already exist! To overwrite, set overwrite_existing_optimization to True.")
+        except IntegrityError as ie:
+            log.error(f"Integrityerror writing DataFrame to {schema}.{table_name} table in database: {ie}")
+            raise ie
         except Exception as e:
             log.error(f"Error writing DataFrame to {schema}.{table_name} table in database: {e}")
+            raise e
 
 
     def save_all(self) -> None:
@@ -147,7 +149,7 @@ class DatabaseHandler:
         df = pd.DataFrame()
         df["timestamp"] = self.config.timestamps
         df["name"] = self.name
-        df["consumption_kwh"] = self.config.consumption_timeseries
+        df["consumption_kw"] = self.config.consumption_timeseries
         df["price_eur"] = self.config.price_timeseries["grid"]
 
         if self.config.add_solar:

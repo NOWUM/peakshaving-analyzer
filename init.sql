@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS input.parameters (
     name TEXT PRIMARY KEY,
     hours_per_timestep FLOAT NOT NULL,
     n_timesteps INTEGER NOT NULL,
-    postal_code INTEGER NOT NULL,
+    postal_code INTEGER,
     add_storage BOOL NOT NULL,
     add_solar BOOL NOT NULL,
     producer_energy_price FLOAT NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS input.parameters (
 CREATE TABLE IF NOT EXISTS input.timeseries (
     name TEXT NOT NULL,
     timestamp timestamptz NOT NULL,
-    consumption_kwh FLOAT NOT NULL,
+    consumption_kw FLOAT NOT NULL,
     price_eur FLOAT NOT NULL,
     solar_generation FLOAT NOT NULL,
     PRIMARY KEY (name, timestamp)
