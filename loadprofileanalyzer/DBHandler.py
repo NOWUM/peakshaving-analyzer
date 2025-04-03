@@ -219,15 +219,15 @@ class DatabaseHandler:
             df["storage_charge_kw"] = self._get_optimum_ts(
                 model_name="StorageModel",
                 variable="chargeOperationVariablesOptimum",
-                index=("storage", "consumption_site")) * 4
+                index=("storage", "consumption_site")) / self.config.hours_per_timestep
             df["storage_discharge_kw"] = self._get_optimum_ts(
                 model_name="StorageModel",
                 variable="dischargeOperationVariablesOptimum",
-                index=("storage", "consumption_site")) * 4
+                index=("storage", "consumption_site")) / self.config.hours_per_timestep
             df["storage_soc_kwh"] = self._get_optimum_ts(
                 model_name="StorageModel",
                 variable="stateOfChargeOperationVariablesOptimum",
-                index=("storage", "consumption_site")) * 4
+                index=("storage", "consumption_site")) / self.config.hours_per_timestep
         else:
             df["storage_charge_kw"] = 0
             df["storage_discharge_kw"] = 0
@@ -237,7 +237,7 @@ class DatabaseHandler:
             df["solar_generation_kw"] = self._get_optimum_ts(
                 model_name="SourceSinkModel",
                 variable="operationVariablesOptimum",
-                index=("PV", "consumption_site")) * 4
+                index=("PV", "consumption_site")) / self.config.hours_per_timestep
         else:
             df["solar_generation_kw"] = 0
 
