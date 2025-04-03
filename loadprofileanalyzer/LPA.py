@@ -99,7 +99,7 @@ class LoadProfileAnalyzer:
             index=np.arange(0, self.number_of_timesteps, 1))
 
         load_df["grid"] = 0
-        load_df["consumption_site"] = self.consumption_timeseries
+        load_df["consumption_site"] = self.consumption_timeseries * self.hours_per_timestep
 
         self.esm.add(
             fn.Sink(
@@ -143,8 +143,6 @@ class LoadProfileAnalyzer:
                 technicalLifetime=1))
 
 
-    # TODO: remove solar data as required parameter
-    # IMO this should be done per request or with csv or similar
     def add_solar(self):
 
         self.esm.add(
