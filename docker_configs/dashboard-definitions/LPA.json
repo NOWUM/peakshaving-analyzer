@@ -591,7 +591,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -600,7 +601,33 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "Grid usage [kW]",
+                  "Consumption [kW]"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 10,
@@ -661,8 +688,8 @@
     "list": [
       {
         "current": {
-          "text": "storage_only_with_dyn_price",
-          "value": "storage_only_with_dyn_price"
+          "text": "storage_only_quarterhourly_fixed_price",
+          "value": "storage_only_quarterhourly_fixed_price"
         },
         "definition": "SELECT DISTINCT(name) FROM input.parameters",
         "description": "Name of the optimization",
@@ -677,8 +704,8 @@
     ]
   },
   "time": {
-    "from": "2023-01-01T00:00:00.000Z",
-    "to": "2023-12-31T23:00:00.000Z"
+    "from": "2023-01-01T0:00:00Z",
+    "to": "2023-12-31T23:45:00Z"
   },
   "timepicker": {},
   "timezone": "browser",
