@@ -283,7 +283,7 @@ class DatabaseHandler:
             index=("storage", "invest", "[Euro]"),
             location="consumption_site")
         eco_df["storage_annuity_eur"] = self._get_val_from_sum(
-            model_name="SourceSinkModel",
+            model_name="StorageModel",
             index=("storage", "TAC", "[Euro/a]"),
             location="consumption_site")
         tech_df["storage_capacity_kwh"] = self._get_val_from_sum(
@@ -302,7 +302,7 @@ class DatabaseHandler:
             location="consumption_site")
         tech_df["inverter_capacity_kw"] = self._get_val_from_sum(
             model_name="ConversionModel",
-            index=("inverter", "capacity", "[kWh]"),
+            index=("from_storage", "capacity", "[kWh]"),
             location="consumption_site")
 
         # solar data

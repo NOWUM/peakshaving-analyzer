@@ -46,7 +46,7 @@ class Config:
         self.inverter_cost_per_kw = eco_values.get('inverter_cost_per_kw')
         self.storage_lifetime = eco_values.get('storage_lifetime')
         self.storage_cost_per_kwh = eco_values.get('storage_cost_per_kwh')
-        self.interest_rate = eco_values.get('interest_rate')
+        self.interest_rate = eco_values.get('interest_rate') / 100
 
         tech_values = config.get('technical_parameters', {})
         self.max_storage_size_kwh = tech_values.get('max_storage_size_kwh')
