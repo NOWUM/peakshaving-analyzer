@@ -1,0 +1,24 @@
+# config file version
+apiVersion: 1
+
+# list of datasources that should be deleted from the database
+deleteDatasources:
+  - name: LoadProfileAnalyzer-DB
+    orgId: 1
+
+# list of datasources to insert/update depending
+# what's available in the database
+datasources:
+- name: LPA
+  type: postgres
+  url: lpa_database:5432
+  user: postgres
+  database: lpa
+  secureJsonData:
+    password: postgres
+  jsonData:
+    sslmode: "disable"
+    postgresVersion: 1600
+    timescaledb: true
+  isDefault: true
+  editable: true

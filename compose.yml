@@ -19,6 +19,11 @@ services:
     restart: always
     ports:
       - "3000:3000"
+    volumes:
+      - ./docker_configs/grafana.ini:/etc/grafana/grafana.ini
+      - ./docker_configs/datasources:/etc/grafana/provisioning/datasources
+      - ./docker_configs/dashboards:/etc/grafana/provisioning/dashboards
+      - ./docker_configs/dashboard-definitions:/etc/grafana/provisioning/dashboard-definitions
 
   pgadmin_service:
     image: dpage/pgadmin4:latest
