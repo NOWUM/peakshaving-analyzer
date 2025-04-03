@@ -191,7 +191,6 @@ class LoadProfileAnalyzer:
                 dischargeRate=self.storage_discharge_rate,
                 doPreciseTsaModeling=False,
                 investPerCapacity=self.storage_cost_per_kwh,
-                opexPerCapacity=0.002,
                 interestRate=self.interest_rate))
 
         self.esm.add(
