@@ -1,5 +1,5 @@
 optimization_parameters:
-  name: storage_only_with_dyn_price    # name of the optimization
+  name: storage_quarterhourly_dyn_price    # name of the optimization
 
   db_uri: postgresql://postgres:postgres@localhost:5432/lpa    # database connection string
   overwrite_existing_optimization: True                         # Wether to overwrite existing optimization or not
@@ -81,7 +81,7 @@ technical_parameters:
   # taken from:
   # https://www.sciencedirect.com/science/article/pii/S2590116819300116
 
-  inverter_efficiency: 0.95   # efficiency of the storage inverter
+  inverter_efficiency: 1   # efficiency of the storage inverter
   # taken from:
   # https://www.sciencedirect.com/science/article/pii/S1364032116306712
 
