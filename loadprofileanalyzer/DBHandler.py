@@ -271,7 +271,7 @@ class DatabaseHandler:
         eco_df["grid_capacity_costs_eur"] = [self._get_val_from_sum(
             model_name="TransmissionModel",
             index=("capacity_price", "invest", "[Euro]", "grid"),
-            location="consumption_site")] * 2
+            location="consumption_site") * 2]
         tech_df["grid_capacity_kw"] = [self._get_val_from_sum(
             model_name="TransmissionModel",
             index=("capacity_price", "capacity", "[kWh]", "grid"),
