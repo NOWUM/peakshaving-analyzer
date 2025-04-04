@@ -71,5 +71,6 @@ CREATE TABLE IF NOT EXISTS output.timeseries (
     storage_soc_kwh FLOAT,
     solar_generation_kw FLOAT,
     consumption_kw FLOAT NOT NULL,
+    energy_price_eur FLOAT NOT NULL
     PRIMARY KEY (name, timestamp)
 );

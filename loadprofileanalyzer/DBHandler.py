@@ -242,6 +242,7 @@ class DatabaseHandler:
             df["solar_generation_kw"] = 0
 
         df["consumption_kw"] = self.config.consumption_timeseries
+        df["energy_price_eur"] = self.config.price_timeseries["grid"]
 
         self._df_to_sql(df, "timeseries", "output")
 
