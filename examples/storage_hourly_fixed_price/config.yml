@@ -14,7 +14,7 @@ optimization_parameters:
   verbose: True   # Wether to print optimization progress or not
 
 consumption_timeseries:
-  file_path: ./examples/storage_only_hourly_fixed_price/consumption.csv   # file path where consumption is stored as .csv
+  file_path: ./examples/storage_hourly_fixed_price/consumption.csv   # file path where consumption is stored as .csv
   value_column: consumption                       # name of the column where consumption is provided
 
 price_timeseries:
