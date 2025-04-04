@@ -29,7 +29,7 @@ solar_timeseries:
   value_column:                                   # name of the column where solar generation is provided
 
 economic_parameters:
-  overwrite_price_timeseries: True         # Wether to overwrite price timeseries or not
+  overwrite_price_timeseries: False         # Wether to overwrite price timeseries or not
   producer_energy_price: 0.15 # €/kWh     # energy price if sourced from supplier
   # value for 2024 taken from:
   # https://www.bdew.de/service/daten-und-grafiken/bdew-strompreisanalyse/
