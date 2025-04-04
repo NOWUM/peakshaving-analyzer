@@ -88,6 +88,10 @@ class Config:
                 log.info("Reading solar timeseries from CSV file.")
                 self.solar_timeseries = self.read_solar_timeseries(config=config)
 
+            # fill NaN with 0
+            self.solar_timeseries.fillna(0, inplace=True)
+
+
         self.check_timeseries_length()
 
         log.info("Config class initialized successfully.")
