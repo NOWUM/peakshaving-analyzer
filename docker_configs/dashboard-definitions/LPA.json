@@ -673,7 +673,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -682,32 +683,7 @@
             ]
           }
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "Price [Eur/kWh]"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 10,
@@ -764,7 +740,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT \n  timestamp,\n  price_eur AS \"Price [Eur/kWh]\"\nFROM input.timeseries\nWHERE name = '$opti_name'",
+          "rawSql": "SELECT \n  timestamp,\n  price_eur * 1000 AS \"Price [Eur/MWh]\"\nFROM input.timeseries\nWHERE name = '$opti_name'",
           "refId": "B",
           "sql": {
             "columns": [
@@ -815,7 +791,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -905,8 +882,8 @@
     ]
   },
   "time": {
-    "from": "2023-01-01T00:00:00Z",
-    "to": "2023-12-31T23:45:00Z"
+    "from": "2023-01-01T00:00:00.000Z",
+    "to": "2023-12-31T23:45:00.000Z"
   },
   "timepicker": {},
   "timezone": "browser",
