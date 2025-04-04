@@ -213,7 +213,7 @@ class DatabaseHandler:
         df["grid_usage_kw"] = self._get_optimum_ts(
             model_name="SourceSinkModel",
             variable="operationVariablesOptimum",
-            index=("grid", "grid")) * 4
+            index=("grid", "grid")) / self.config.hours_per_timestep
 
         if self.config.add_storage:
             df["storage_charge_kw"] = self._get_optimum_ts(
