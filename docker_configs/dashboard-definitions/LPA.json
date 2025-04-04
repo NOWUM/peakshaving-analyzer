@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 3,
+  "id": 4,
   "links": [],
   "panels": [
     {
@@ -476,7 +476,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 52
+            "y": 75
           },
           "id": 10,
           "options": {
@@ -557,7 +557,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 52
+            "y": 75
           },
           "id": 9,
           "options": {
@@ -612,7 +612,7 @@
       "type": "row"
     },
     {
-      "collapsed": true,
+      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -620,241 +620,265 @@
         "y": 18
       },
       "id": 6,
-      "panels": [
+      "panels": [],
+      "title": "Time series",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P8B13FFC36AE64788"
+      },
+      "description": "Demand, grid and storage (State of charge, charging, discharging) usage",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "Price [Eur/kWh]"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  timestamp,\n  grid_usage_kw AS \"Grid usage [kW]\",\n  consumption_kw AS \"Consumption [kW]\",\n  storage_charge_kw AS \"Storage charging [kW]\",\n  storage_discharge_kw AS \"Storage discharging [kW]\",\n  storage_soc_kwh AS \"Storage state of charge [kWh]\"\nFROM output.timeseries\nWHERE name = '$opti_name'",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
             "uid": "P8B13FFC36AE64788"
           },
-          "description": "Demand, grid and storage (State of charge, charging, discharging) usage",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "barWidthFactor": 0.6,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              }
-            },
-            "overrides": [
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT \n  timestamp,\n  price_eur AS \"Price [Eur/kWh]\"\nFROM input.timeseries\nWHERE name = '$opti_name'",
+          "refId": "B",
+          "sql": {
+            "columns": [
               {
-                "__systemRef": "hideSeriesFrom",
-                "matcher": {
-                  "id": "byNames",
-                  "options": {
-                    "mode": "exclude",
-                    "names": [
-                      "Grid usage [kW]",
-                      "Consumption [kW]"
-                    ],
-                    "prefix": "All except:",
-                    "readOnly": true
-                  }
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
                 },
-                "properties": [
-                  {
-                    "id": "custom.hideFrom",
-                    "value": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": true
-                    }
-                  }
-                ]
+                "type": "groupBy"
               }
-            ]
-          },
-          "gridPos": {
-            "h": 10,
-            "w": 24,
-            "x": 0,
-            "y": 28
-          },
-          "id": 3,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "hideZeros": false,
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "11.5.2",
-          "targets": [
-            {
-              "editorMode": "code",
-              "format": "table",
-              "rawQuery": true,
-              "rawSql": "SELECT \n  timestamp,\n  grid_usage_kw AS \"Grid usage [kW]\",\n  consumption_kw AS \"Consumption [kW]\",\n  storage_charge_kw AS \"Storage charging [kW]\",\n  storage_discharge_kw AS \"Storage discharging [kW]\",\n  storage_soc_kwh AS \"Storage state of charge [kWh]\"\nFROM output.timeseries\nWHERE name = '$opti_name'",
-              "refId": "A",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            }
-          ],
-          "title": "Demand, grid and storage usage",
-          "type": "timeseries"
+            ],
+            "limit": 50
+          }
         }
       ],
-      "title": "Time series",
-      "type": "row"
+      "title": "Demand, grid and storage usage",
+      "type": "timeseries"
     },
     {
-      "collapsed": true,
+      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 19
+        "y": 29
       },
       "id": 11,
-      "panels": [
-        {
-          "datasource": {
-            "uid": "P8B13FFC36AE64788"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 13,
-            "w": 24,
-            "x": 0,
-            "y": 39
-          },
-          "id": 12,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "percentChangeColorMode": "standard",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showPercentChange": false,
-            "textMode": "auto",
-            "wideLayout": true
-          },
-          "pluginVersion": "11.5.2",
-          "targets": [
-            {
-              "editorMode": "code",
-              "format": "table",
-              "rawQuery": true,
-              "rawSql": "SELECT\n    name AS \"Name\",\n    hours_per_timestep AS \"Hours per timestep [h]\",\n    n_timesteps AS \"Number of timesteps\",\n    postal_code AS \"Postal code\",\n    add_storage AS \"Add storage\",\n    add_solar AS \"Add solar\",\n    producer_energy_price AS \"Producer energy price [Eur/kWh]\",\n    grid_capacity_price AS \"Grid capacity price [Eur/kW]\",\n    grid_energy_price AS \"Grid energy price [Eur/kWh]\",\n    pv_system_lifetime AS \"PV system lifetime [Years]\",\n    pv_system_cost_per_kwp AS \"PV system cost per kWp [Eur/kWp]\",\n    storage_lifetime AS \"Storage lifetime [Years]\",\n    storage_cost_per_kwh AS \"Storage cost per kWh [Eur/kWh]\",\n    inverter_cost_per_kw AS \"Inverter cost per kW [Eur/kW]\",\n    inverter_lifetime AS \"Inverter lifetime [Years]\",\n    interest_rate AS \"Interest rate [%]\",\n    max_storage_size_kwh AS \"Max storage size [kWh]\",\n    max_pv_system_size_kwp AS \"Max PV system size [kWp]\",\n    storage_charge_efficiency AS \"Storage charge efficiency [%]\",\n    storage_discharge_efficiency AS \"Storage discharge efficiency [%]\",\n    storage_charge_rate AS \"Storage charge rate [kW]\",\n    storage_discharge_rate AS \"Storage discharge rate [kW]\",\n    inverter_efficiency AS \"Inverter efficiency [%]\",\n    pv_system_kwp_per_m2 AS \"PV system kWp per square meter [kWp/m²]\",\n    solver AS \"Solver\",\n    assumed_year AS \"Assumed year\",\n    leap_year::bool AS \"Is leap year\"\nFROM input.parameters\nWHERE name = '$opti_name'",
-              "refId": "A",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            }
-          ],
-          "title": "Panel Title",
-          "type": "stat"
-        }
-      ],
+      "panels": [],
       "title": "Input parameters",
       "type": "row"
+    },
+    {
+      "datasource": {
+        "uid": "P8B13FFC36AE64788"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    name AS \"Name\",\n    hours_per_timestep AS \"Hours per timestep [h]\",\n    n_timesteps AS \"Number of timesteps\",\n    postal_code AS \"Postal code\",\n    add_storage AS \"Add storage\",\n    add_solar AS \"Add solar\",\n    producer_energy_price AS \"Producer energy price [Eur/kWh]\",\n    grid_capacity_price AS \"Grid capacity price [Eur/kW]\",\n    grid_energy_price AS \"Grid energy price [Eur/kWh]\",\n    pv_system_lifetime AS \"PV system lifetime [Years]\",\n    pv_system_cost_per_kwp AS \"PV system cost per kWp [Eur/kWp]\",\n    storage_lifetime AS \"Storage lifetime [Years]\",\n    storage_cost_per_kwh AS \"Storage cost per kWh [Eur/kWh]\",\n    inverter_cost_per_kw AS \"Inverter cost per kW [Eur/kW]\",\n    inverter_lifetime AS \"Inverter lifetime [Years]\",\n    interest_rate * 100 AS \"Interest rate [%]\",\n    max_storage_size_kwh AS \"Max storage size [kWh]\",\n    max_pv_system_size_kwp AS \"Max PV system size [kWp]\",\n    storage_charge_efficiency * 100 AS \"Storage charge efficiency [%]\",\n    storage_discharge_efficiency  * 100 AS \"Storage discharge efficiency [%]\",\n    storage_charge_rate AS \"Storage charge rate\",\n    storage_discharge_rate AS \"Storage discharge rate\",\n    inverter_efficiency * 100 AS \"Inverter efficiency [%]\",\n    pv_system_kwp_per_m2 AS \"PV system kWp per square meter [kWp/m²]\",\n    solver AS \"Solver\",\n    assumed_year AS \"Assumed year\",\n    leap_year::bool AS \"Is leap year\"\nFROM input.parameters\nWHERE name = '$opti_name'",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Panel Title",
+      "type": "stat"
     }
   ],
   "preload": false,
@@ -865,8 +889,8 @@
     "list": [
       {
         "current": {
-          "text": "storage_only_quarterhourly_fixed_price",
-          "value": "storage_only_quarterhourly_fixed_price"
+          "text": "storage_quarterhourly_dyn_price",
+          "value": "storage_quarterhourly_dyn_price"
         },
         "definition": "SELECT DISTINCT(name) FROM input.parameters",
         "description": "Name of the optimization",
@@ -887,7 +911,7 @@
   "timepicker": {},
   "timezone": "browser",
   "title": "Home",
-  "uid": "dehtkbjp5hon4a",
-  "version": 2,
+  "uid": "aehvlaynic7pcf",
+  "version": 1,
   "weekStart": ""
 }

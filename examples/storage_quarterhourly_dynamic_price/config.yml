@@ -14,11 +14,11 @@ optimization_parameters:
   verbose: True   # Wether to print optimization progress or not
 
 consumption_timeseries:
-  file_path: ./examples/storage_only_dynamic_price/consumption.csv   # file path where consumption is stored as .csv
+  file_path: ./examples/storage_quarterhourly_dynamic_price/consumption.csv   # file path where consumption is stored as .csv
   value_column: consumption                       # name of the column where consumption is provided
 
 price_timeseries:
-  file_path: ./examples/storage_only_dynamic_price/price.csv      # file path where prices are stored as .csv
+  file_path: ./examples/storage_quarterhourly_dynamic_price/price.csv      # file path where prices are stored as .csv
   value_column: price                           # name of the column where prices are provided
 
 solar_timeseries:
@@ -81,7 +81,7 @@ technical_parameters:
   # taken from:
   # https://www.sciencedirect.com/science/article/pii/S2590116819300116
 
-  inverter_efficiency: 1   # efficiency of the storage inverter
+  inverter_efficiency: 0.95   # efficiency of the storage inverter
   # taken from:
   # https://www.sciencedirect.com/science/article/pii/S1364032116306712
 
