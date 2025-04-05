@@ -62,22 +62,22 @@ class LoadProfileAnalyzer:
         self._add_source()
         self._add_transmission()
         self._add_sink()
-        logging.info("Built default ESM")
+        logging.info("Built default ESM.")
 
         if self.add_stor:
             self.add_storage()
-            logging.info("Added storage")
+            logging.info("Added storage.")
 
         if self.add_sol:
             self.add_solar()
-            logging.info("Added solar")
+            logging.info("Added solar.")
 
         if self.auto_opt:
             self.optimize(solver=self.solver)
-            logging.info("Optimized")
+            logging.info("Optimized.")
 
             self.save_results(config)
-            logging.info("Saved results")
+            logging.info("Saved results.")
 
 
     def _create_esm(self):

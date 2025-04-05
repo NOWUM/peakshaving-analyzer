@@ -18,11 +18,11 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 3,
+  "id": 2,
   "links": [],
   "panels": [
     {
-      "collapsed": true,
+      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -30,1283 +30,1314 @@
         "y": 0
       },
       "id": 5,
-      "panels": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
-          },
-          "description": "Total savings integrating saved capacity cost and storage system annuity.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "currencyEUR"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 1
-          },
-          "id": 13,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "percentChangeColorMode": "standard",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showPercentChange": false,
-            "textMode": "auto",
-            "wideLayout": true
-          },
-          "pluginVersion": "11.5.2",
-          "targets": [
-            {
-              "editorMode": "code",
-              "format": "table",
-              "rawQuery": true,
-              "rawSql": "WITH orig_cap_costs AS (\n  SELECT max(consumption_kw) * (SELECT grid_capacity_price FROM input.parameters WHERE name = '$opti_name') AS orig_cap\n  FROM input.timeseries\n  WHERE name = '$opti_name'),\n  battery_system_cost AS (\n    SELECT storage_annuity_eur + inverter_annuity_eur AS bsc FROM output.eco WHERE name = '$opti_name'\n  )\nSELECT\n  (SELECT orig_cap FROM orig_cap_costs WHERE name = '$opti_name') - grid_capacity_costs_eur - (SELECT bsc FROM battery_system_cost WHERE name = '$opti_name') AS \"Total savings\"\nFROM output.eco WHERE name = '$opti_name'",
-              "refId": "A",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            }
-          ],
-          "title": "Total savings",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
-          },
-          "description": "Capacity price to be paid to grid operator.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "currencyEUR"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 1
-          },
-          "id": 1,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "percentChangeColorMode": "standard",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showPercentChange": false,
-            "textMode": "auto",
-            "wideLayout": true
-          },
-          "pluginVersion": "11.5.2",
-          "targets": [
-            {
-              "datasource": {
-                "type": "grafana-postgresql-datasource",
-                "uid": "P8B13FFC36AE64788"
-              },
-              "editorMode": "code",
-              "format": "table",
-              "hide": false,
-              "rawQuery": true,
-              "rawSql": "SELECT \n  max(consumption_kw) * (SELECT grid_capacity_price FROM input.parameters WHERE name = '$opti_name') AS \"Original\"\nFROM input.timeseries\nWHERE name = '$opti_name'",
-              "refId": "B",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            },
-            {
-              "datasource": {
-                "type": "grafana-postgresql-datasource",
-                "uid": "P8B13FFC36AE64788"
-              },
-              "editorMode": "code",
-              "format": "table",
-              "hide": false,
-              "rawQuery": true,
-              "rawSql": "SELECT grid_capacity_costs_eur AS \"Optimized\"\nFROM output.eco\nWHERE name = '$opti_name' ",
-              "refId": "A",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            },
-            {
-              "datasource": {
-                "type": "grafana-postgresql-datasource",
-                "uid": "P8B13FFC36AE64788"
-              },
-              "editorMode": "code",
-              "format": "table",
-              "hide": false,
-              "rawQuery": true,
-              "rawSql": "SELECT (\n  SELECT max(consumption_kw) * (SELECT grid_capacity_price FROM input.parameters WHERE name = '$opti_name') AS \"Original\"\n  FROM input.timeseries\n  WHERE name = '$opti_name') - (\n    SELECT grid_capacity_costs_eur AS \"Optimized\"\n  FROM output.eco\n  WHERE name = '$opti_name' ) AS \"Savings\"",
-              "refId": "C",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            }
-          ],
-          "title": "Capacity costs",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
-          },
-          "description": "Investment needed for storage system.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "currencyEUR"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 9
-          },
-          "id": 7,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "percentChangeColorMode": "standard",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showPercentChange": false,
-            "textMode": "auto",
-            "wideLayout": true
-          },
-          "pluginVersion": "11.5.2",
-          "targets": [
-            {
-              "editorMode": "code",
-              "format": "table",
-              "rawQuery": true,
-              "rawSql": "SELECT\n  storage_invest_eur AS \"Storage\",\n  inverter_invest_eur AS \"Inverter\",\n  storage_invest_eur + inverter_invest_eur AS \"Total\"\nFROM output.eco \nWHERE name = '$opti_name'",
-              "refId": "A",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            }
-          ],
-          "title": "Storage system invest",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
-          },
-          "description": "Cost for storage system including battery and inverter as annuity",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "currencyEUR"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 9
-          },
-          "id": 4,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "percentChangeColorMode": "standard",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showPercentChange": false,
-            "textMode": "auto",
-            "wideLayout": true
-          },
-          "pluginVersion": "11.5.2",
-          "targets": [
-            {
-              "datasource": {
-                "type": "grafana-postgresql-datasource",
-                "uid": "P8B13FFC36AE64788"
-              },
-              "editorMode": "code",
-              "format": "table",
-              "hide": false,
-              "rawQuery": true,
-              "rawSql": "SELECT \n  storage_annuity_eur AS \"Storage\",\n  inverter_annuity_eur AS \"Inverter\",\n  storage_annuity_eur + inverter_annuity_eur AS \"Total\"\nFROM output.eco\nWHERE name = '$opti_name'",
-              "refId": "B",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            }
-          ],
-          "title": "Storage system annuity",
-          "type": "stat"
-        }
-      ],
+      "panels": [],
       "title": "Capacity costs",
       "type": "row"
     },
     {
-      "collapsed": true,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P8B13FFC36AE64788"
+      },
+      "description": "Total savings integrating saved capacity cost and storage system annuity.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
       "gridPos": {
-        "h": 1,
-        "w": 24,
+        "h": 8,
+        "w": 12,
         "x": 0,
         "y": 1
       },
-      "id": 8,
-      "panels": [
+      "id": 13,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH orig_cap_costs AS (\n  SELECT max(consumption_kw) * (SELECT grid_capacity_price FROM input.parameters WHERE name = '$opti_name') AS orig_cap\n  FROM input.timeseries\n  WHERE name = '$opti_name'),\n  battery_system_cost AS (\n    SELECT storage_annuity_eur + inverter_annuity_eur AS bsc FROM output.eco WHERE name = '$opti_name'\n  )\nSELECT\n  (SELECT orig_cap FROM orig_cap_costs WHERE name = '$opti_name') - grid_capacity_costs_eur - (SELECT bsc FROM battery_system_cost WHERE name = '$opti_name') AS \"Total savings\"\nFROM output.eco WHERE name = '$opti_name'",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Total savings",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P8B13FFC36AE64788"
+      },
+      "description": "Capacity price to be paid to grid operator.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
             "uid": "P8B13FFC36AE64788"
           },
-          "description": "Maximum load on grid.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "kwatt"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 34
-          },
-          "id": 10,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "percentChangeColorMode": "standard",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showPercentChange": false,
-            "textMode": "auto",
-            "wideLayout": true
-          },
-          "pluginVersion": "11.5.2",
-          "targets": [
-            {
-              "editorMode": "code",
-              "format": "table",
-              "rawQuery": true,
-              "rawSql": "SELECT\n  max(grid_usage_kw) AS \"Optimized\",\n  max(consumption_kw) AS \"Default\"\nFROM output.timeseries\nWHERE name = '$opti_name'",
-              "refId": "A",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT \n  max(consumption_kw) * (SELECT grid_capacity_price FROM input.parameters WHERE name = '$opti_name') AS \"Original\"\nFROM input.timeseries\nWHERE name = '$opti_name'",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
               }
-            }
-          ],
-          "title": "Max grid load",
-          "type": "stat"
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         },
         {
           "datasource": {
             "type": "grafana-postgresql-datasource",
             "uid": "P8B13FFC36AE64788"
           },
-          "description": "Size of battery system components.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT grid_capacity_costs_eur AS \"Optimized\"\nFROM output.eco\nWHERE name = '$opti_name' ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
               }
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 34
-          },
-          "id": 9,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "percentChangeColorMode": "standard",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showPercentChange": false,
-            "textMode": "auto",
-            "wideLayout": true
-          },
-          "pluginVersion": "11.5.2",
-          "targets": [
-            {
-              "editorMode": "code",
-              "format": "table",
-              "rawQuery": true,
-              "rawSql": "SELECT \n  storage_capacity_kwh AS \"Storage capacity [kWh]\",\n  inverter_capacity_kw AS \"Inverter capacity [kW]\"\nFROM output.tech\nWHERE name = '$opti_name'",
-              "refId": "A",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
               }
-            }
-          ],
-          "title": "Battery system",
-          "type": "stat"
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "P8B13FFC36AE64788"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT (\n  SELECT max(consumption_kw) * (SELECT grid_capacity_price FROM input.parameters WHERE name = '$opti_name') AS \"Original\"\n  FROM input.timeseries\n  WHERE name = '$opti_name') - (\n    SELECT grid_capacity_costs_eur AS \"Optimized\"\n  FROM output.eco\n  WHERE name = '$opti_name' ) AS \"Savings\"",
+          "refId": "C",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
+      "title": "Capacity costs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P8B13FFC36AE64788"
+      },
+      "description": "Investment needed for storage system.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  storage_invest_eur AS \"Storage\",\n  inverter_invest_eur AS \"Inverter\",\n  storage_invest_eur + inverter_invest_eur AS \"Total\"\nFROM output.eco \nWHERE name = '$opti_name'",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Storage system invest",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P8B13FFC36AE64788"
+      },
+      "description": "Cost for storage system including battery and inverter as annuity",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "P8B13FFC36AE64788"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT \n  storage_annuity_eur AS \"Storage\",\n  inverter_annuity_eur AS \"Inverter\",\n  storage_annuity_eur + inverter_annuity_eur AS \"Total\"\nFROM output.eco\nWHERE name = '$opti_name'",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Storage system annuity",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "id": 8,
+      "panels": [],
       "title": "Sizes",
       "type": "row"
     },
     {
-      "collapsed": true,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P8B13FFC36AE64788"
+      },
+      "description": "Maximum load on grid.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "kwatt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  max(consumption_kw) AS \"Original\",\n  max(grid_usage_kw) AS \"Optimized\"\nFROM output.timeseries\nWHERE name = '$opti_name'",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Max grid load",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P8B13FFC36AE64788"
+      },
+      "description": "Size of battery system components.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  storage_capacity_kwh AS \"Storage capacity [kWh]\",\n  inverter_capacity_kw AS \"Inverter capacity [kW]\"\nFROM output.tech\nWHERE name = '$opti_name'",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Battery system",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 2
+        "y": 26
       },
       "id": 6,
-      "panels": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
-          },
-          "description": "Demand, grid and storage (State of charge, charging, discharging) usage",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "barWidthFactor": 0.6,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              }
-            },
-            "overrides": [
-              {
-                "__systemRef": "hideSeriesFrom",
-                "matcher": {
-                  "id": "byNames",
-                  "options": {
-                    "mode": "exclude",
-                    "names": [
-                      "Grid usage [kW]",
-                      "Storage discharging [kW]",
-                      "Consumption [kW]",
-                      "PV system generation [kW]"
-                    ],
-                    "prefix": "All except:",
-                    "readOnly": true
-                  }
-                },
-                "properties": [
-                  {
-                    "id": "custom.hideFrom",
-                    "value": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": true
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 10,
-            "w": 24,
-            "x": 0,
-            "y": 43
-          },
-          "id": 3,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "hideZeros": false,
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "11.5.2",
-          "targets": [
-            {
-              "editorMode": "code",
-              "format": "table",
-              "rawQuery": true,
-              "rawSql": "SELECT \n  timestamp,\n  grid_usage_kw AS \"Grid usage [kW]\",\n  consumption_kw AS \"Consumption [kW]\",\n  storage_charge_kw AS \"Storage charging [kW]\",\n  storage_discharge_kw AS \"Storage discharging [kW]\",\n  storage_soc_kwh AS \"Storage state of charge [kWh]\"\nFROM output.timeseries\nWHERE name = '$opti_name'",
-              "refId": "A",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            },
-            {
-              "datasource": {
-                "type": "grafana-postgresql-datasource",
-                "uid": "P8B13FFC36AE64788"
-              },
-              "editorMode": "code",
-              "format": "table",
-              "hide": false,
-              "rawQuery": true,
-              "rawSql": "SELECT \n  timestamp,\n  price_eur * 1000 AS \"Price [Eur/MWh]\"\nFROM input.timeseries\nWHERE name = '$opti_name'",
-              "refId": "B",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            },
-            {
-              "datasource": {
-                "type": "grafana-postgresql-datasource",
-                "uid": "P8B13FFC36AE64788"
-              },
-              "editorMode": "code",
-              "format": "table",
-              "hide": false,
-              "rawQuery": true,
-              "rawSql": "select timestamp, solar_generation_kw AS \"PV system generation [kW]\"\nfrom output.timeseries\nwhere name = '$opti_name'",
-              "refId": "C",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            }
-          ],
-          "title": "Demand, grid and storage usage",
-          "type": "timeseries"
-        }
-      ],
+      "panels": [],
       "title": "Time series",
       "type": "row"
     },
     {
-      "collapsed": true,
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P8B13FFC36AE64788"
+      },
+      "description": "Demand, grid and storage (State of charge, charging, discharging) usage",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "Consumption [kW]",
+                  "Grid usage [kW]",
+                  "Storage discharging [kW]"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  timestamp,\n  grid_usage_kw AS \"Grid usage [kW]\",\n  consumption_kw AS \"Consumption [kW]\",\n  storage_charge_kw AS \"Storage charging [kW]\",\n  storage_discharge_kw AS \"Storage discharging [kW]\",\n  storage_soc_kwh AS \"Storage state of charge [kWh]\"\nFROM output.timeseries\nWHERE name = '$opti_name'",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "P8B13FFC36AE64788"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT \n  timestamp,\n  price_eur * 1000 AS \"Price [Eur/MWh]\"\nFROM input.timeseries\nWHERE name = '$opti_name'",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "P8B13FFC36AE64788"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "select timestamp, solar_generation_kw AS \"PV system generation [kW]\"\nfrom output.timeseries\nwhere name = '$opti_name'",
+          "refId": "C",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Demand, grid and storage usage",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 3
+        "y": 37
       },
       "id": 11,
-      "panels": [
-        {
-          "datasource": {
-            "uid": "P8B13FFC36AE64788"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 13,
-            "w": 24,
-            "x": 0,
-            "y": 54
-          },
-          "id": 12,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "percentChangeColorMode": "standard",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showPercentChange": false,
-            "textMode": "auto",
-            "wideLayout": true
-          },
-          "pluginVersion": "11.5.2",
-          "targets": [
-            {
-              "editorMode": "code",
-              "format": "table",
-              "rawQuery": true,
-              "rawSql": "SELECT\n    name AS \"Name\",\n    hours_per_timestep AS \"Hours per timestep [h]\",\n    n_timesteps AS \"Number of timesteps\",\n    postal_code AS \"Postal code\",\n    add_storage AS \"Add storage\",\n    add_solar AS \"Add solar\",\n    producer_energy_price AS \"Producer energy price [Eur/kWh]\",\n    grid_capacity_price AS \"Grid capacity price [Eur/kW]\",\n    grid_energy_price AS \"Grid energy price [Eur/kWh]\",\n    pv_system_lifetime AS \"PV system lifetime [Years]\",\n    pv_system_cost_per_kwp AS \"PV system cost per kWp [Eur/kWp]\",\n    storage_lifetime AS \"Storage lifetime [Years]\",\n    storage_cost_per_kwh AS \"Storage cost per kWh [Eur/kWh]\",\n    inverter_cost_per_kw AS \"Inverter cost per kW [Eur/kW]\",\n    inverter_lifetime AS \"Inverter lifetime [Years]\",\n    interest_rate * 100 AS \"Interest rate [%]\",\n    max_storage_size_kwh AS \"Max storage size [kWh]\",\n    max_pv_system_size_kwp AS \"Max PV system size [kWp]\",\n    storage_charge_efficiency * 100 AS \"Storage charge efficiency [%]\",\n    storage_discharge_efficiency  * 100 AS \"Storage discharge efficiency [%]\",\n    storage_charge_rate AS \"Storage charge rate\",\n    storage_discharge_rate AS \"Storage discharge rate\",\n    inverter_efficiency * 100 AS \"Inverter efficiency [%]\",\n    pv_system_kwp_per_m2 AS \"PV system kWp per square meter [kWp/m²]\",\n    solver AS \"Solver\",\n    assumed_year AS \"Assumed year\",\n    leap_year::bool AS \"Is leap year\"\nFROM input.parameters\nWHERE name = '$opti_name'",
-              "refId": "A",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            }
-          ],
-          "title": "Panel Title",
-          "type": "stat"
-        }
-      ],
+      "panels": [],
       "title": "Input parameters",
       "type": "row"
     },
     {
-      "collapsed": true,
+      "datasource": {
+        "uid": "P8B13FFC36AE64788"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 38
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    name AS \"Name\",\n    hours_per_timestep AS \"Hours per timestep [h]\",\n    n_timesteps AS \"Number of timesteps\",\n    postal_code AS \"Postal code\",\n    add_storage AS \"Add storage\",\n    add_solar AS \"Add solar\",\n    producer_energy_price AS \"Producer energy price [Eur/kWh]\",\n    grid_capacity_price AS \"Grid capacity price [Eur/kW]\",\n    grid_energy_price AS \"Grid energy price [Eur/kWh]\",\n    pv_system_lifetime AS \"PV system lifetime [Years]\",\n    pv_system_cost_per_kwp AS \"PV system cost per kWp [Eur/kWp]\",\n    storage_lifetime AS \"Storage lifetime [Years]\",\n    storage_cost_per_kwh AS \"Storage cost per kWh [Eur/kWh]\",\n    inverter_cost_per_kw AS \"Inverter cost per kW [Eur/kW]\",\n    inverter_lifetime AS \"Inverter lifetime [Years]\",\n    interest_rate * 100 AS \"Interest rate [%]\",\n    max_storage_size_kwh AS \"Max storage size [kWh]\",\n    max_pv_system_size_kwp AS \"Max PV system size [kWp]\",\n    storage_charge_efficiency * 100 AS \"Storage charge efficiency [%]\",\n    storage_discharge_efficiency  * 100 AS \"Storage discharge efficiency [%]\",\n    storage_charge_rate AS \"Storage charge rate\",\n    storage_discharge_rate AS \"Storage discharge rate\",\n    inverter_efficiency * 100 AS \"Inverter efficiency [%]\",\n    pv_system_kwp_per_m2 AS \"PV system kWp per square meter [kWp/m²]\",\n    solver AS \"Solver\",\n    assumed_year AS \"Assumed year\",\n    leap_year::bool AS \"Is leap year\"\nFROM input.parameters\nWHERE name = '$opti_name'",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Panel Title",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 4
+        "y": 51
       },
       "id": 14,
-      "panels": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "currencyEUR"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 5
-          },
-          "id": 18,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "percentChangeColorMode": "standard",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showPercentChange": false,
-            "textMode": "auto",
-            "wideLayout": true
-          },
-          "pluginVersion": "11.5.2",
-          "targets": [
-            {
-              "editorMode": "code",
-              "format": "table",
-              "rawQuery": true,
-              "rawSql": "WITH original_price AS (SELECT \n\tsum(consumption_kw * price_eur * (\n\t\tSELECT hours_per_timestep\n\t\tFROM input.parameters\n\t\tWHERE name = '$opti_name'))\n\tAS \"Original\"\nFROM input.timeseries\nWHERE name = '$opti_name'),\noptimized_price AS (SELECT \n\tsum(grid_usage_kw * energy_price_eur * (\n        SELECT hours_per_timestep\n        FROM input.parameters\n        WHERE name = '$opti_name'))\n\tAS \"Optimized\"\nFROM output.timeseries\nWHERE name = '$opti_name')\nSELECT \n\t\"Original\" - (\n\t\tSELECT \"Optimized\" FROM optimized_price) - (\n\t\t\tSELECT solar_annuity_eur FROM output.eco WHERE name = '$opti_name') AS \"Savings\"\nFROM original_price",
-              "refId": "A",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            }
-          ],
-          "title": "Total savings",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
-          },
-          "description": "Costs for energy obtained by grid in default scenario and optimized with PV system",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "currencyEUR"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 5
-          },
-          "id": 17,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "percentChangeColorMode": "standard",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showPercentChange": false,
-            "textMode": "auto",
-            "wideLayout": true
-          },
-          "pluginVersion": "11.5.2",
-          "targets": [
-            {
-              "editorMode": "code",
-              "format": "table",
-              "rawQuery": true,
-              "rawSql": "SELECT \n\tsum(consumption_kw * price_eur * (\n\t\tSELECT hours_per_timestep\n\t\tFROM input.parameters\n\t\tWHERE name = '$opti_name'))\n\tAS \"Original\"\nFROM input.timeseries\nWHERE name = '$opti_name'",
-              "refId": "A",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            },
-            {
-              "datasource": {
-                "type": "grafana-postgresql-datasource",
-                "uid": "P8B13FFC36AE64788"
-              },
-              "editorMode": "code",
-              "format": "table",
-              "hide": false,
-              "rawQuery": true,
-              "rawSql": "SELECT \n\tsum(grid_usage_kw * energy_price_eur * (\n        SELECT hours_per_timestep\n        FROM input.parameters\n        WHERE name = '$opti_name'))\n\tAS \"Optimized\"\nFROM output.timeseries\nWHERE name = '$opti_name'",
-              "refId": "B",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            },
-            {
-              "datasource": {
-                "type": "grafana-postgresql-datasource",
-                "uid": "P8B13FFC36AE64788"
-              },
-              "editorMode": "code",
-              "format": "table",
-              "hide": false,
-              "rawQuery": true,
-              "rawSql": "WITH original_price AS (SELECT \n\tsum(consumption_kw * price_eur * (\n\t\tSELECT hours_per_timestep\n\t\tFROM input.parameters\n\t\tWHERE name = '$opti_name'))\n\tAS \"Original\"\nFROM input.timeseries\nWHERE name = '$opti_name'),\noptimized_price AS (SELECT \n\tsum(grid_usage_kw * energy_price_eur * (\n        SELECT hours_per_timestep\n        FROM input.parameters\n        WHERE name = '$opti_name'))\n\tAS \"Optimized\"\nFROM output.timeseries\nWHERE name = '$opti_name')\nSELECT \n  \"Original\" - (SELECT \"Optimized\" FROM optimized_price) AS \"Savings\"\nFROM original_price",
-              "refId": "C",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            }
-          ],
-          "title": "Energy costs",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "currencyEUR"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 13
-          },
-          "id": 15,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "percentChangeColorMode": "standard",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showPercentChange": false,
-            "textMode": "auto",
-            "wideLayout": true
-          },
-          "pluginVersion": "11.5.2",
-          "targets": [
-            {
-              "editorMode": "code",
-              "format": "table",
-              "rawQuery": true,
-              "rawSql": "SELECT \n  solar_invest_eur AS \"PV System invest\",\n  solar_annuity_eur AS \"PV System annuity\"\nFROM output.eco\nWHERE name = '$opti_name'",
-              "refId": "A",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            }
-          ],
-          "title": "PV System costs",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "kwatt"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 13
-          },
-          "id": 16,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "percentChangeColorMode": "standard",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showPercentChange": false,
-            "textMode": "auto",
-            "wideLayout": true
-          },
-          "pluginVersion": "11.5.2",
-          "targets": [
-            {
-              "editorMode": "code",
-              "format": "table",
-              "rawQuery": true,
-              "rawSql": "SELECT \n  solar_capacity_kwp AS \"Max PV system capacity\"\nFROM output.tech\nWHERE name = '$opti_name'",
-              "refId": "A",
-              "sql": {
-                "columns": [
-                  {
-                    "parameters": [],
-                    "type": "function"
-                  }
-                ],
-                "groupBy": [
-                  {
-                    "property": {
-                      "type": "string"
-                    },
-                    "type": "groupBy"
-                  }
-                ],
-                "limit": 50
-              }
-            }
-          ],
-          "title": "PV System size",
-          "type": "stat"
-        }
-      ],
+      "panels": [],
       "title": "PV System",
       "type": "row"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 52
+      },
+      "id": 19,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## Please note: these values will not be correct if PV system not integrated in optimization.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "11.5.2",
+      "title": "",
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P8B13FFC36AE64788"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 54
+      },
+      "id": 18,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH original_price AS (SELECT \n\tsum(consumption_kw * price_eur * (\n\t\tSELECT hours_per_timestep\n\t\tFROM input.parameters\n\t\tWHERE name = '$opti_name'))\n\tAS \"Original\"\nFROM input.timeseries\nWHERE name = '$opti_name'),\noptimized_price AS (SELECT \n\tsum(grid_usage_kw * energy_price_eur * (\n        SELECT hours_per_timestep\n        FROM input.parameters\n        WHERE name = '$opti_name'))\n\tAS \"Optimized\"\nFROM output.timeseries\nWHERE name = '$opti_name')\nSELECT \n\t\"Original\" - (\n\t\tSELECT \"Optimized\" FROM optimized_price) - (\n\t\t\tSELECT solar_annuity_eur FROM output.eco WHERE name = '$opti_name') AS \"Savings\"\nFROM original_price",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Total savings",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P8B13FFC36AE64788"
+      },
+      "description": "Costs for energy obtained by grid in default scenario and optimized with PV system",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 54
+      },
+      "id": 17,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n\tsum(consumption_kw * price_eur * (\n\t\tSELECT hours_per_timestep\n\t\tFROM input.parameters\n\t\tWHERE name = '$opti_name'))\n\tAS \"Original\"\nFROM input.timeseries\nWHERE name = '$opti_name'",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "P8B13FFC36AE64788"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "SELECT \n\tsum(grid_usage_kw * energy_price_eur * (\n        SELECT hours_per_timestep\n        FROM input.parameters\n        WHERE name = '$opti_name'))\n\tAS \"Optimized\"\nFROM output.timeseries\nWHERE name = '$opti_name'",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "P8B13FFC36AE64788"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH original_price AS (SELECT \n\tsum(consumption_kw * price_eur * (\n\t\tSELECT hours_per_timestep\n\t\tFROM input.parameters\n\t\tWHERE name = '$opti_name'))\n\tAS \"Original\"\nFROM input.timeseries\nWHERE name = '$opti_name'),\noptimized_price AS (SELECT \n\tsum(grid_usage_kw * energy_price_eur * (\n        SELECT hours_per_timestep\n        FROM input.parameters\n        WHERE name = '$opti_name'))\n\tAS \"Optimized\"\nFROM output.timeseries\nWHERE name = '$opti_name')\nSELECT \n  \"Original\" - (SELECT \"Optimized\" FROM optimized_price) AS \"Savings\"\nFROM original_price",
+          "refId": "C",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Energy costs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P8B13FFC36AE64788"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 62
+      },
+      "id": 15,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  solar_invest_eur AS \"PV System invest\",\n  solar_annuity_eur AS \"PV System annuity\"\nFROM output.eco\nWHERE name = '$opti_name'",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "PV System costs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P8B13FFC36AE64788"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "kwatt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 62
+      },
+      "id": 16,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  solar_capacity_kwp AS \"Max PV system capacity\"\nFROM output.tech\nWHERE name = '$opti_name'",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "PV System size",
+      "type": "stat"
     }
   ],
   "preload": false,
@@ -1317,8 +1348,8 @@
     "list": [
       {
         "current": {
-          "text": "storage_pv_hourly_dynamic_price",
-          "value": "storage_pv_hourly_dynamic_price"
+          "text": "storage_hourly_fixed_price",
+          "value": "storage_hourly_fixed_price"
         },
         "definition": "SELECT DISTINCT(name) FROM input.parameters",
         "description": "Name of the optimization",
@@ -1338,8 +1369,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Home",
-  "uid": "bei02vyt2pfcwb",
+  "title": "Home Copy",
+  "uid": "bei05d1r7zw1sc",
   "version": 1,
   "weekStart": ""
 }
