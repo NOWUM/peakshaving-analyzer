@@ -20,21 +20,11 @@ services:
     restart: always
     ports:
       - "3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
     volumes:
       - ./docker_configs/grafana.ini:/etc/grafana/grafana.ini
       - ./docker_configs/datasources:/etc/grafana/provisioning/datasources
       - ./docker_configs/dashboards:/etc/grafana/provisioning/dashboards
       - ./docker_configs/dashboard-definitions:/etc/grafana/provisioning/dashboard-definitions
 
-  pgadmin_service:
-    image: dpage/pgadmin4:latest
-    container_name: lpa_pgadmin
-    restart: always
-    user: root
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.org
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "8080:80"
-    volumes:
-      - ./data/pgadmin:/var/lib/pgadmin
