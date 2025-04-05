@@ -4,12 +4,12 @@ import fine as fn
 import numpy as np
 import pandas as pd
 
-from loadprofileanalyzer import Config, DatabaseHandler
+from peakshaving_analyzer import Config, DatabaseHandler
 
-logger = logging.getLogger("loadprofileanalyzer")
+logger = logging.getLogger("peakshaving_analyzer")
 
 
-class LoadProfileAnalyzer:
+class PeakShavingAnalyzer:
 
     def __init__(
             self,

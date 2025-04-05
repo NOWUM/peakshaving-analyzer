@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 import fine as fn
 import pandas as pd
 
-from loadprofileanalyzer import Config
+from peakshaving_analyzer import Config
 
 log = logging.getLogger("DatabaseHandler")
 
