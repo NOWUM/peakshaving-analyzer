@@ -3,17 +3,17 @@ apiVersion: 1
 
 # list of datasources that should be deleted from the database
 deleteDatasources:
-  - name: LoadProfileAnalyzer-DB
+  - name: PeakShavingAnalyzer-DB
     orgId: 1
 
 # list of datasources to insert/update depending
 # what's available in the database
 datasources:
-- name: LPA
+- name: PSA
   type: postgres
-  url: lpa_database:5432
+  url: psa_database:5432
   user: postgres
-  database: lpa
+  database: psa
   secureJsonData:
     password: postgres
   jsonData:

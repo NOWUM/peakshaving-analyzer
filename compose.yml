@@ -1,13 +1,13 @@
 services:
   database:
     image: timescale/timescaledb-ha:pg17
-    container_name: lpa_database
+    container_name: psa_database
     restart: always
     user: root
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=lpa
+      - POSTGRES_DB=psa
     ports:
       - "5432:5432"
     volumes:

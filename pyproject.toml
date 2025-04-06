@@ -1,21 +1,20 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools >= 77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "loadprofile-analyzer"
+name = "peakshaving-analyzer"
 version = "0.0.1"
-description = "LPA"
-authors = [{ name = "NOWUM Developers", email = "contact@nowum.de"}]
-license = "AGPL-3.0-or-later"
+description = "Peak shaving analysis for industrial load profiles"
+authors = [{ name = "Christoph Komanns", email = "c.komanns@gmail.com"}]
 readme = "README.md"
-keywords = ["load profiles", "energy market", "energy optimization", "simulation"]
+license = "MIT"
+keywords = ["peak shaving", "energy framework", "energy optimization", "optimization"]
 
 classifiers=[
-    "Development Status :: 4 - Beta",
+    "Development Status :: 2 - Alpha",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
-    "Framework :: AsyncIO",
     "Topic :: Scientific/Engineering",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Programming Language :: Python :: 3 :: Only",
@@ -39,5 +38,5 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-exclude = ["data*", "examples*"]
-include = ["loadprofileanalyzer*"]
+exclude = ["data*", "examples*", "docker_configs*"]
+include = ["peakshaving_analyzer*"]

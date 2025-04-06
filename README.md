@@ -1,1 +1,1 @@
-# loadprofile-analyzer
+# peakshaving-analyzer
