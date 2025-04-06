@@ -52,7 +52,7 @@ cd peakshaving-analyzer
 2. Start the database and Grafana using the following command:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 This will launch a container for TimescaleDB and Grafana with preconfigured dashboards for analysis. You can access the Grafana dashboards at `http://localhost:3000`.
