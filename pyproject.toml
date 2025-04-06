@@ -32,7 +32,9 @@ dependencies = [
     "psycopg2-binary >=2.9.5",
     "pyyaml >=6.0",
     "pyyaml-include >=2.2a",
-    "pyomo >=6.8.0",
+    "fine >=2.4.1",
+    "pyomo >=6.9.1",
+    "pgeocode >=0.5.0",
     "highspy",
     "gurobipy",
 ]
