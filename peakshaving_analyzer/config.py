@@ -8,7 +8,7 @@ import calendar
 
 
 import logging
-log = logging.getLogger("config")
+log = logging.getLogger("peakshaving_config")
 
 
 class Config:
@@ -61,7 +61,6 @@ class Config:
         self.solver = config.get('solver', 'appsi_highs')
 
         if self.verbose:
-            logging.basicConfig(level=logging.INFO)
             log.setLevel(logging.INFO)
 
         self.consumption_timeseries = self.read_consumption_timeseries(config=config)

@@ -3,6 +3,8 @@
 from peakshaving_analyzer.config import Config
 from peakshaving_analyzer.DBHandler import DatabaseHandler
 from peakshaving_analyzer.PSA import PeakShavingAnalyzer
+import logging
+logging.basicConfig(level=logging.WARNING)
 
 """
 PeakShaverAnalyzer package initialization.
