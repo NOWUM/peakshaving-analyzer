@@ -6,7 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "peakshaving-analyzer"
 version = "0.0.1"
 description = "Peak shaving analysis for industrial load profiles"
-authors = [{ name = "Christoph Komanns", email = "c.komanns@gmail.com"}]
+authors = [
+    { name = "Christoph Komanns", email = "c.komanns@gmail.com" },
+    { name = "Florian Maurer", email = "fmaurer@disroot.org" }]
 readme = "README.md"
 license = "MIT"
 keywords = ["peak shaving", "energy framework", "energy optimization", "optimization"]
@@ -38,6 +40,9 @@ dependencies = [
     "highspy",
     "gurobipy",
 ]
+
+[project.urls]
+repositroy = "https://github.com/NOWUM/peakshaving-analyzer"
 
 [tool.setuptools.packages.find]
 exclude = ["data*", "examples*", "docker_configs*"]
