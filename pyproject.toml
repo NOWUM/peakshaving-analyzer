@@ -35,7 +35,7 @@ dependencies = [
     "pyyaml >=6.0",
     "pyyaml-include >=2.2a",
     "fine >=2.4.1",
-    "pyomo >=6.9.1",
+    "pyomo >=6.8.0",
     "pgeocode >=0.5.0",
     "highspy",
     "gurobipy",
