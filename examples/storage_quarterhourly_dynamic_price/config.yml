@@ -1,7 +1,7 @@
 optimization_parameters:
   name: storage_quarterhourly_dyn_price    # name of the optimization
 
-  db_uri: postgresql://postgres:postgres@localhost:5432/lpa    # database connection string
+  db_uri: postgresql://postgres:postgres@localhost:5432/psa    # database connection string
   overwrite_existing_optimization: True                         # Wether to overwrite existing optimization or not
 
   hours_per_timestep: 0.25    # in 15-minute timesteps

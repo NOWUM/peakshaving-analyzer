@@ -16,7 +16,7 @@ services:
 
   grafana:
     image: grafana/grafana-oss
-    container_name: lpa_dashboard
+    container_name: psa_dashboard
     restart: always
     ports:
       - "3000:3000"
