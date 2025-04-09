@@ -36,8 +36,7 @@
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P8B13FFC36AE64788"
+        "type": "grafana-postgresql-datasource"
       },
       "description": "Total savings integrating saved capacity cost and storage system annuity.",
       "fieldConfig": {
@@ -119,8 +118,7 @@
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P8B13FFC36AE64788"
+        "type": "grafana-postgresql-datasource"
       },
       "description": "Capacity price to be paid to grid operator.",
       "fieldConfig": {
@@ -174,8 +172,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
+            "type": "grafana-postgresql-datasource"
           },
           "editorMode": "code",
           "format": "table",
@@ -203,8 +200,7 @@
         },
         {
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
+            "type": "grafana-postgresql-datasource"
           },
           "editorMode": "code",
           "format": "table",
@@ -232,8 +228,7 @@
         },
         {
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
+            "type": "grafana-postgresql-datasource"
           },
           "editorMode": "code",
           "format": "table",
@@ -265,8 +260,7 @@
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P8B13FFC36AE64788"
+        "type": "grafana-postgresql-datasource"
       },
       "description": "Investment needed for storage system.",
       "fieldConfig": {
@@ -348,8 +342,7 @@
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P8B13FFC36AE64788"
+        "type": "grafana-postgresql-datasource"
       },
       "description": "Cost for storage system including battery and inverter as annuity",
       "fieldConfig": {
@@ -403,8 +396,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
+            "type": "grafana-postgresql-datasource"
           },
           "editorMode": "code",
           "format": "table",
@@ -449,8 +441,7 @@
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P8B13FFC36AE64788"
+        "type": "grafana-postgresql-datasource"
       },
       "description": "Maximum load on grid.",
       "fieldConfig": {
@@ -532,8 +523,7 @@
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P8B13FFC36AE64788"
+        "type": "grafana-postgresql-datasource"
       },
       "description": "Size of battery system components.",
       "fieldConfig": {
@@ -627,8 +617,7 @@
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P8B13FFC36AE64788"
+        "type": "grafana-postgresql-datasource"
       },
       "description": "Demand, grid and storage (State of charge, charging, discharging) usage",
       "fieldConfig": {
@@ -761,8 +750,7 @@
         },
         {
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
+            "type": "grafana-postgresql-datasource"
           },
           "editorMode": "code",
           "format": "table",
@@ -790,8 +778,7 @@
         },
         {
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
+            "type": "grafana-postgresql-datasource"
           },
           "editorMode": "code",
           "format": "table",
@@ -835,9 +822,6 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "uid": "P8B13FFC36AE64788"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -954,8 +938,7 @@
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P8B13FFC36AE64788"
+        "type": "grafana-postgresql-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -1036,8 +1019,7 @@
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P8B13FFC36AE64788"
+        "type": "grafana-postgresql-datasource"
       },
       "description": "Costs for energy obtained by grid in default scenario and optimized with PV system",
       "fieldConfig": {
@@ -1115,8 +1097,7 @@
         },
         {
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
+            "type": "grafana-postgresql-datasource"
           },
           "editorMode": "code",
           "format": "table",
@@ -1144,8 +1125,7 @@
         },
         {
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "P8B13FFC36AE64788"
+            "type": "grafana-postgresql-datasource"
           },
           "editorMode": "code",
           "format": "table",
@@ -1177,8 +1157,7 @@
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P8B13FFC36AE64788"
+        "type": "grafana-postgresql-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -1259,8 +1238,7 @@
     },
     {
       "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "P8B13FFC36AE64788"
+        "type": "grafana-postgresql-datasource"
       },
       "fieldConfig": {
         "defaults": {
