@@ -49,6 +49,8 @@ exclude = ["data*", "examples*", "docker_configs*"]
 include = ["peakshaving_analyzer*"]
 
 [tool.ruff]
+line-length = 120
+
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "G", "PIE"]

@@ -8,13 +8,12 @@ from peakshaving_analyzer import Config, DatabaseHandler
 
 logger = logging.getLogger("peakshaving_analyzer")
 
+
 class PeakShavingAnalyzer:
-
     def __init__(
-            self,
-            config: Config,
-            ) -> None:
-
+        self,
+        config: Config,
+    ) -> None:
         self.consumption_timeseries = config.consumption_timeseries
         self.price_timeseries = config.price_timeseries
         self.hours_per_timestep = config.hours_per_timestep
@@ -24,7 +23,6 @@ class PeakShavingAnalyzer:
         self.auto_opt = config.auto_opt
         self.verbose = config.verbose
         self.db_uri = config.db_uri
-        
 
         self.interest_rate = config.interest_rate
 
@@ -77,24 +75,22 @@ class PeakShavingAnalyzer:
             self.save_results(config)
             logger.info("Saved results.")
 
-
     def _create_esm(self):
-
         self.esm = fn.EnergySystemModel(
             locations={"grid", "consumption_site"},
             commodities={"energy", "stored_energy"},
             commodityUnitsDict={"energy": "kWh", "stored_energy": "kWh"},
-            costUnit='Euro',
+            costUnit="Euro",
             numberOfTimeSteps=self.number_of_timesteps,
             hoursPerTimeStep=self.hours_per_timestep,
-            verboseLogLevel=2)
-
+            verboseLogLevel=2,
+        )
 
     def _add_sink(self):
-
         load_df = pd.DataFrame(
             columns=["grid", "consumption_site"],
-            index=np.arange(0, self.number_of_timesteps, 1))
+            index=np.arange(0, self.number_of_timesteps, 1),
+        )
 
         load_df["grid"] = 0
         load_df["consumption_site"] = self.consumption_timeseries * self.hours_per_timestep
@@ -105,14 +101,15 @@ class PeakShavingAnalyzer:
                 commodity="energy",
                 name="consumption_site",
                 hasCapacityVariable=False,
-                operationRateFix=load_df))
-
+                operationRateFix=load_df,
+            )
+        )
 
     def _add_source(self):
-
         source_df = pd.DataFrame(
             columns=["grid", "consumption_site"],
-            index=np.arange(0, self.number_of_timesteps, 1))
+            index=np.arange(0, self.number_of_timesteps, 1),
+        )
 
         source_df["grid"] = 1e18
         source_df["consumption_site"] = 0
@@ -124,11 +121,11 @@ class PeakShavingAnalyzer:
                 name="grid",
                 hasCapacityVariable=False,
                 operationRateMax=source_df,
-                commodityCostTimeSeries=self.price_timeseries))
-
+                commodityCostTimeSeries=self.price_timeseries,
+            )
+        )
 
     def _add_transmission(self):
-
         self.esm.add(
             fn.Transmission(
                 esM=self.esm,
@@ -138,11 +135,11 @@ class PeakShavingAnalyzer:
                 investPerCapacity=self.grid_capacity_price,
                 interestRate=self.interest_rate,
                 economicLifetime=1,
-                technicalLifetime=1))
-
+                technicalLifetime=1,
+            )
+        )
 
     def add_solar(self):
-
         self.esm.add(
             fn.Source(
                 esM=self.esm,
@@ -154,21 +151,26 @@ class PeakShavingAnalyzer:
                 investPerCapacity=self.pv_system_cost_per_kwp,
                 interestRate=self.interest_rate,
                 economicLifetime=self.pv_system_lifetime,
-                technicalLifetime=self.pv_system_lifetime))
-
+                technicalLifetime=self.pv_system_lifetime,
+            )
+        )
 
     def add_storage(self):
-
         self.esm.add(
             fn.Conversion(
                 esM=self.esm,
                 name="to_storage",
                 physicalUnit="kWh",
-                commodityConversionFactors={'energy': -1, 'stored_energy': self.inverter_efficiency},
+                commodityConversionFactors={
+                    "energy": -1,
+                    "stored_energy": self.inverter_efficiency,
+                },
                 hasCapacityVariable=True,
                 investPerCapacity=0,
                 linkedConversionCapacityID="storage",
-                interestRate=self.interest_rate))
+                interestRate=self.interest_rate,
+            )
+        )
 
         self.esm.add(
             fn.Storage(
@@ -187,24 +189,26 @@ class PeakShavingAnalyzer:
                 dischargeRate=self.storage_discharge_rate,
                 doPreciseTsaModeling=False,
                 investPerCapacity=self.storage_cost_per_kwh,
-                interestRate=self.interest_rate))
+                interestRate=self.interest_rate,
+            )
+        )
 
         self.esm.add(
             fn.Conversion(
                 esM=self.esm,
                 name="from_storage",
                 physicalUnit="kWh",
-                commodityConversionFactors={'stored_energy': -1, 'energy': 1},
+                commodityConversionFactors={"stored_energy": -1, "energy": 1},
                 hasCapacityVariable=True,
                 investPerCapacity=self.inverter_cost_per_kw,
                 economicLifetime=self.inverter_lifetime,
                 technicalLifetime=self.inverter_lifetime,
                 linkedConversionCapacityID="storage",
-                interestRate=self.interest_rate))
-
+                interestRate=self.interest_rate,
+            )
+        )
 
     def optimize(self, solver="appsi_highs"):
-
         logger.info("Creating pyomo model.")
         self.esm.declareOptimizationProblem()
 
@@ -215,7 +219,6 @@ class PeakShavingAnalyzer:
 
         logger.info("Optimizing. Depending on the given parameters and your setup, this may take a while.")
         self.esm.optimize(solver=solver, declaresOptimizationProblem=False)
-
 
     def save_results(self, config):
         """Save the results of the optimization to the database.
@@ -231,26 +234,25 @@ class PeakShavingAnalyzer:
 
         DBHandler.save_all()
 
-
     def build_and_optimize(
-            self,
-            add_storage: bool = False,
-            storage_cost_per_kwh: float = 145,
-            storage_lifetime: int = 15,
-            storage_charge_efficiency: float = 0.9,
-            storage_discharge_efficiency: float = 0.9,
-            storage_charge_rate: float = 1,
-            storage_discharge_rate: float = 1,
-            max_storage_size_kwh: float | None = None,
-            inverter_cost_per_kw: float = 180,
-            inverter_lifetime: int = 15,
-            inverter_efficiency: float = 0.95,
-            add_solar: bool = False,
-            solar_data: pd.Series | None = None,
-            pv_system_cost_per_kwp: float = 900,
-            max_pv_system_size_kwp: float | None = None,
-            pv_system_lifetime: int = 30):
-
+        self,
+        add_storage: bool = False,
+        storage_cost_per_kwh: float = 145,
+        storage_lifetime: int = 15,
+        storage_charge_efficiency: float = 0.9,
+        storage_discharge_efficiency: float = 0.9,
+        storage_charge_rate: float = 1,
+        storage_discharge_rate: float = 1,
+        max_storage_size_kwh: float | None = None,
+        inverter_cost_per_kw: float = 180,
+        inverter_lifetime: int = 15,
+        inverter_efficiency: float = 0.95,
+        add_solar: bool = False,
+        solar_data: pd.Series | None = None,
+        pv_system_cost_per_kwp: float = 900,
+        max_pv_system_size_kwp: float | None = None,
+        pv_system_lifetime: int = 30,
+    ):
         # model building
         self._add_sink()
         self._add_source()
@@ -267,14 +269,16 @@ class PeakShavingAnalyzer:
                 max_storage_size_kwh=max_storage_size_kwh,
                 inverter_cost_per_kw=inverter_cost_per_kw,
                 inverter_lifetime=inverter_lifetime,
-                inverter_efficiency=inverter_efficiency)
+                inverter_efficiency=inverter_efficiency,
+            )
 
         if add_solar:
             self.add_solar(
                 solar_data=solar_data,
                 pv_system_cost_per_kwp=pv_system_cost_per_kwp,
                 max_pv_system_size_kwp=max_pv_system_size_kwp,
-                pv_system_lifetime=pv_system_lifetime)
+                pv_system_lifetime=pv_system_lifetime,
+            )
 
         # optimize
         self.optimize(solver=self.solver)
