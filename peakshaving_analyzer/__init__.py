@@ -13,5 +13,4 @@ PeakShaverAnalyzer package initialization.
 """
 
 __all__ = ["PeakShavingAnalyzer", "Config", "DatabaseHandler"]
-__version__ = "0.1.0"
-__author__ = "Christoph Komanns"
+__version__ = "0.0.3"
