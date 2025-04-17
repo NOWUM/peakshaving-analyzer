@@ -74,9 +74,9 @@ If you're connecting to your own database either create the predefined tables or
 ## Examples
 
 In the `examples` directory are four examples:
-* A scenario examing only a storage system using hourly values with a fixed, non-dynamic price for the used energy.
-* A scenario examing only a storage system using quarterhouly values with a fixed, non-dynamic price for the used energy.
-* A scenario examing only a storage system using quarterhourly values with a dynamic, time-depended price for the used energy.
+* A scenario examining only a storage system using hourly values with a fixed, non-dynamic price for the used energy.
+* A scenario examining only a storage system using quarterhouly values with a fixed, non-dynamic price for the used energy.
+* A scenario examining only a storage system using quarterhourly values with a dynamic, time-depended price for the used energy.
 * A scenario examining a storage system as well as a photovoltaic system using hourly values with a dynamic, time-depended price for the used energy.
 
 You can run these examples with `python3 ./examples/example/main.py` from the base directory.
