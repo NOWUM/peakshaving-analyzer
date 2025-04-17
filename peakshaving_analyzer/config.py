@@ -1,13 +1,12 @@
-import yaml
+import calendar
+import logging
+from datetime import datetime
 
 import pandas as pd
 import pgeocode
-from datetime import datetime
 import requests
-import calendar
+import yaml
 
-
-import logging
 log = logging.getLogger("peakshaving_config")
 
 
@@ -20,7 +19,7 @@ class Config:
             config_path (str): Path to the YAML configuration file.
         """
         log.info("Initializing Config class.")
-        with open(config_path, 'r') as file:
+        with open(config_path) as file:
             config = yaml.safe_load(file)
         log.info("Configuration file loaded successfully.")
 
@@ -249,8 +248,8 @@ class Config:
         """
 
         if len(self.price_timeseries[self.price_timeseries < 0]) > 0:
-            msg = f"We can't integrate negative prices yet. We set the "
-            msg += f"negative prices in your price timeseries to 0."
+            msg = "We can't integrate negative prices yet. We set the "
+            msg += "negative prices in your price timeseries to 0."
             log.warning(msg)
 
         self.price_timeseries[self.price_timeseries < 0] = 0
@@ -284,7 +283,7 @@ class Config:
         # make API Call
         url = f"https://api.brightsky.dev/weather?lat={lat}&lon={lon}&country=DE"
         url += f"&date={self.assumed_year}-01-01T00:00:00&last_date={self.assumed_year}-12-31T23:45:00"
-        url += f"&timezone=auto&format=json"
+        url += "&timezone=auto&format=json"
         log.info(f"Making API call to: {url}")
         data = requests.get(url).json()
 

@@ -27,4 +27,3 @@ services:
       - ./docker_configs/datasources:/etc/grafana/provisioning/datasources
       - ./docker_configs/dashboards:/etc/grafana/provisioning/dashboards
       - ./docker_configs/dashboard-definitions:/etc/grafana/provisioning/dashboard-definitions
-

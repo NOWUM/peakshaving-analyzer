@@ -47,3 +47,9 @@ repositroy = "https://github.com/NOWUM/peakshaving-analyzer"
 [tool.setuptools.packages.find]
 exclude = ["data*", "examples*", "docker_configs*"]
 include = ["peakshaving_analyzer*"]
+
+[tool.ruff]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "G", "PIE"]
+ignore = ["E501", "G004", "E731"]

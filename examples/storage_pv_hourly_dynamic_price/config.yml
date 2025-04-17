@@ -74,8 +74,8 @@ technical_parameters:
   # taken from:
   # https://www.sciencedirect.com/science/article/pii/S2352152X23027846
 
-  storage_charge_rate: 1      # 
-  storage_discharge_rate: 1   # 
+  storage_charge_rate: 1      #
+  storage_discharge_rate: 1   #
   # taken from:
   # https://www.sciencedirect.com/science/article/pii/S2590116819300116
 
