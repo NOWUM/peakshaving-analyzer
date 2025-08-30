@@ -1,9 +1,7 @@
 import calendar
 import logging
-from datetime import datetime
-
 from dataclasses import dataclass
-from typing import TypedDict
+from datetime import datetime
 
 import pandas as pd
 import pgeocode
@@ -52,6 +50,7 @@ class Config:
     inverter_efficiency: float | None = None
     max_pv_system_size_kwp: float | None = None
     pv_system_kwp_per_m2: float | None = None
+
 
 class Config:
     def __init__(self, config_path: str):

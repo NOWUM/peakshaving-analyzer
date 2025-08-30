@@ -20,16 +20,20 @@ TABLES = [
     "output.timeseries",
 ]
 
+
 class OutputHandler:
     def __init__(self, config: Config, esm: fn.EnergySystemModel) -> None:
         self.config = config
         self.esm = esm
 
+
 class STDHandler(OutputHandler):
     pass
 
+
 class CSVHandler(OutputHandler):
     pass
+
 
 class DatabaseHandler(OutputHandler):
     def __init__(self, config: Config, esm: fn.EnergySystemModel) -> None:

@@ -1,10 +1,8 @@
-from pathlib import Path
-import yaml
 import logging
-import datetime
-import calendar
+from pathlib import Path
 
 import pandas as pd
+import yaml
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -29,12 +27,9 @@ class InputHandler:
         # check and read price information
         data["price_timeseries"] = self._read_or_create_price_timeseries(data)
 
-
     def _read_or_create_price_timeseries(self, data):
-
         # if no filepath is given, we either...
         if not data.get("price_file_path"):
-
             # throw an error if no price information is given
             if not data.get("producer_energy_price"):
                 msg = "No price information found."
@@ -44,20 +39,13 @@ class InputHandler:
 
             # ... or create a timeseries from a fixed price
             else:
-                return pd.Series(
-                    data=data["producer_energy_price"],
-                    index=data["timestamps"]
-                )
-            
+                return pd.Series(data=data["producer_energy_price"], index=data["timestamps"])
+
         # if the filepath is given, we either ...
         else:
-
             # we overwrite the timeseries by given fixed price
             if data.get("overwrite_price_timeseries"):
-                return pd.Series(
-                    data=data["producer_energy_price"],
-                    index=data["timestamps"]
-                )
+                return pd.Series(data=data["producer_energy_price"], index=data["timestamps"])
 
             # or just read in the series from file
             else:
@@ -67,6 +55,7 @@ class InputHandler:
                     target_column="price",
                 )
 
+
 class YAMLHandler(InputHandler):
     def __init__(self, config_path: Path | str) -> None:
         with open(config_path) as file:
@@ -75,11 +64,7 @@ class YAMLHandler(InputHandler):
 
         super().__init__(data)
 
-    def read_csv_timeseries(
-            self,
-            path: str,
-            value_column: str,
-            target_column: str) -> pd.Series:
+    def read_csv_timeseries(self, path: str, value_column: str, target_column: str) -> pd.Series:
         """Reads consumption timeseries from given .csv-file
 
         Returns:
