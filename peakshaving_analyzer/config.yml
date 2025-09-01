@@ -19,11 +19,15 @@ verbose: True   # Wether to print optimization progress or not
 ##############
 # timeseries #
 ##############
+# name of the column where timestamps are provided (should be equal in all files)
+# can be set to None if timestamps are not provided, we will then assume timestamps based on pattern
+timestamp_column: timestamp
+
 consumption_file_path: consumption.csv   # file path where consumption is stored as .csv
-consumption_value_column: consumption                       # name of the column where consumption is provided
+consumption_value_column: consumption    # name of the column where consumption is provided
 
 price_file_path: price.csv      # file path where prices are stored as .csv
-price_value_column: price                           # name of the column where prices are provided
+price_value_column: price       # name of the column where prices are provided
 
 postal_code: 52066   # postal code for automtic solar generation calculation, leave empty for own timeseries
 # if not provided, solar generation will be calculated with the following parameters
