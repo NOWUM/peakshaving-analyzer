@@ -1,90 +1,99 @@
-optimization_parameters:
-  name: storage_hourly_fixed_price    # name of the optimization
+###########################
+# optimization_parameters #
+###########################
+name: storage_hourly_fixed_price    # name of the optimization
 
-  db_uri: postgresql://postgres:postgres@localhost:5432/psa    # database connection string
-  overwrite_existing_optimization: True                         # Wether to overwrite existing optimization or not
+db_uri: postgresql://postgres:postgres@localhost:5432/psa    # database connection string
+overwrite_existing_optimization: True                         # Wether to overwrite existing optimization or not
 
-  hours_per_timestep: 1    # 1 hour timesteps
+hours_per_timestep: 1    # 1 hour timesteps
 
-  add_storage: True   # wether to add storage to optimization or not
-  add_solar: False    # wether to add pv system to optimization or not
+add_storage: True   # wether to add storage to optimization or not
+add_solar: False    # wether to add pv system to optimization or not
 
-  auto_opt: True    # Wether to automatically start optizmization or not
-
-  verbose: True   # Wether to print optimization progress or not
-
-consumption_timeseries:
-  file_path: ./examples/storage_hourly_fixed_price/consumption.csv   # file path where consumption is stored as .csv
-  value_column: consumption                       # name of the column where consumption is provided
-
-price_timeseries:
-  file_path:       # file path where prices are stored as .csv
-  value_column:                            # name of the column where prices are provided
-
-solar_timeseries:
-  postal_code:    # postal code for automtic solar generation calculation, leave empty for own timeseries
-  # if not provided, solar generation will be calculated with the following parameters
-  # value column needs to contain values from 0 (no solar generation) to 1 (max solar generation)
-  file_path: # file path where solar generation is stored as .csv
-  value_column:                                   # name of the column where solar generation is provided
-
-economic_parameters:
-  overwrite_price_timeseries: True         # Wether to overwrite price timeseries or not
-  producer_energy_price: 0.15 # €/kWh     # energy price if sourced from supplier
-  # value for 2024 taken from:
-  # https://www.bdew.de/service/daten-und-grafiken/bdew-strompreisanalyse/
-  # https://de.statista.com/statistik/daten/studie/252029/umfrage/industriestrompreise-inkl-stromsteuer-in-deutschland/
-
-  grid_capacity_price: 130      # capacity price in euro to be paid yearly
-  grid_energy_price: 0.0460     # energy price in euro per kwh to be paid per kwh source from grid
-  # mean updated with historical inflation of cumulative 26.24% from:
-  # https://zenodo.org/records/13734730
-
-  pv_system_lifetime: 30    # pv system lifetime in years
-  # taken from:
-  # https://www.mdpi.com/1996-1073/14/14/4278
-
-  pv_system_cost_per_kwp: 1250    # pv system cost in euro per kWpeak
-  # taken from:
-  # https://www.ise.fraunhofer.de/de/veroeffentlichungen/studien/studie-stromgestehungskosten-erneuerbare-energien.html
-
-  inverter_lifetime: 15   # storage inverter lifetime in years
-  # taken from:
-  # 10.4229/WCPEC-82022-3DV.1.46 Bucher Joss
-
-  inverter_cost_per_kw: 180   # storage inverter cost in euro per kw
-  # taken from:
-  # https://www.sciencedirect.com/science/article/pii/S1876610216310736
-
-  storage_lifetime: 15    # storage lifetime in years
-  # taken from:
-  # "Energiespeicher - Bedarf, Technologien, Integration", Stadler Sterner 2017
-
-  storage_cost_per_kwh: 145   # storage capacity cost in euro per kwh capacity
-  # taken from:
-  # https://www.pem.rwth-aachen.de/cms/pem/der-lehrstuhl/presse-medien/aktuelle-meldungen/~bexlow/battery-monitor-2023-nachfrage-waechst/
-
-  interest_rate: 3    # interes rate in %
-
-technical_parameters:
-  max_storage_size_kwh:     # maximum available storage size in kWh (leave empty for infinite size)
-  max_pv_system_size_kwp:   # maximum available pv system size in kWpeak (leave empty for infinite size)
-
-  storage_charge_efficiency: 0.9      # efficiency for charging storage
-  storage_discharge_efficiency: 0.9   # efficiency for discharging storage
-  # for round trip efficiency of 0.81
-  # taken from:
-  # https://www.sciencedirect.com/science/article/pii/S2352152X23027846
-
-  storage_charge_rate: 1      #
-  storage_discharge_rate: 1   #
-  # taken from:
-  # https://www.sciencedirect.com/science/article/pii/S2590116819300116
-
-  inverter_efficiency: 0.95   # efficiency of the storage inverter
-  # taken from:
-  # https://www.sciencedirect.com/science/article/pii/S1364032116306712
-
-  pv_system_kwp_per_m2: 0.4   # energy obtainable per area in kWpeak per m²
-
+auto_opt: False    # Wether to automatically start optizmization or not
 solver: "gurobi"
+
+verbose: True   # Wether to print optimization progress or not
+
+##############
+# timeseries #
+##############
+# name of the column where timestamps are provided (should be equal in all files)
+# can be set to None if timestamps are not provided, we will then assume timestamps based on pattern
+timestamp_column:
+
+consumption_file_path: ./examples/storage_hourly_fixed_price/consumption.csv   # file path where consumption is stored as .csv
+consumption_value_column: consumption                       # name of the column where consumption is provided
+
+price_file_path:       # file path where prices are stored as .csv
+price_value_column:                            # name of the column where prices are provided
+
+postal_code:    # postal code for automtic solar generation calculation, leave empty for own timeseries
+# if not provided, solar generation will be calculated with the following parameters
+# value column needs to contain values from 0 (no solar generation) to 1 (max solar generation)
+solar_file_path: # file path where solar generation is stored as .csv
+solar_value_column:                                   # name of the column where solar generation is provided
+
+#######################
+# economic parameters #
+#######################
+overwrite_price_timeseries: True         # Wether to overwrite price timeseries or not
+producer_energy_price: 0.15 # €/kWh     # energy price if sourced from supplier
+# value for 2024 taken from:
+# https://www.bdew.de/service/daten-und-grafiken/bdew-strompreisanalyse/
+# https://de.statista.com/statistik/daten/studie/252029/umfrage/industriestrompreise-inkl-stromsteuer-in-deutschland/
+
+grid_capacity_price: 130      # capacity price in euro to be paid yearly
+grid_energy_price: 0.0460     # energy price in euro per kwh to be paid per kwh source from grid
+# mean updated with historical inflation of cumulative 26.24% from:
+# https://zenodo.org/records/13734730
+
+pv_system_lifetime: 30    # pv system lifetime in years
+# taken from:
+# https://www.mdpi.com/1996-1073/14/14/4278
+
+pv_system_cost_per_kwp: 1250    # pv system cost in euro per kWpeak
+# taken from:
+# https://www.ise.fraunhofer.de/de/veroeffentlichungen/studien/studie-stromgestehungskosten-erneuerbare-energien.html
+
+inverter_lifetime: 15   # storage inverter lifetime in years
+# taken from:
+# 10.4229/WCPEC-82022-3DV.1.46 Bucher Joss
+
+inverter_cost_per_kw: 180   # storage inverter cost in euro per kw
+# taken from:
+# https://www.sciencedirect.com/science/article/pii/S1876610216310736
+
+storage_lifetime: 15    # storage lifetime in years
+# taken from:
+# "Energiespeicher - Bedarf, Technologien, Integration", Stadler Sterner 2017
+
+storage_cost_per_kwh: 145   # storage capacity cost in euro per kwh capacity
+# taken from:
+# https://www.pem.rwth-aachen.de/cms/pem/der-lehrstuhl/presse-medien/aktuelle-meldungen/~bexlow/battery-monitor-2023-nachfrage-waechst/
+
+interest_rate: 3    # interes rate in %
+
+########################
+# technical parameters #
+########################
+max_storage_size_kwh:     # maximum available storage size in kWh (leave empty for infinite size)
+max_pv_system_size_kwp:   # maximum available pv system size in kWpeak (leave empty for infinite size)
+
+storage_charge_efficiency: 0.9      # efficiency for charging storage
+storage_discharge_efficiency: 0.9   # efficiency for discharging storage
+# for round trip efficiency of 0.81
+# taken from:
+# https://www.sciencedirect.com/science/article/pii/S2352152X23027846
+
+storage_charge_rate: 1      #
+storage_discharge_rate: 1   #
+# taken from:
+# https://www.sciencedirect.com/science/article/pii/S2590116819300116
+
+inverter_efficiency: 0.95   # efficiency of the storage inverter
+# taken from:
+# https://www.sciencedirect.com/science/article/pii/S1364032116306712
+
+pv_system_kwp_per_m2: 0.4   # energy obtainable per area in kWpeak per m²

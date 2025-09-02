@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
-def load_yaml(config_file_path: Path | str) -> Config:
+def load_yaml_config(config_file_path: Path | str) -> Config:
     # read in configuration file
     with open(config_file_path) as file:
         data = yaml.safe_load(file)
