@@ -210,7 +210,7 @@ class PeakShavingAnalyzer:
             )
         )
 
-    def optimize(self, solver="appsi_highs"):
+    def optimize(self, solver: str | None = None):
         logger.info("Creating pyomo model.")
         self.esm.declareOptimizationProblem()
 
@@ -219,7 +219,12 @@ class PeakShavingAnalyzer:
         if self.add_stor:
             self.esm.pyM.stateOfCharge_stor["consumption_site", "storage", 0, 0, 0].setub(0)
 
+        # set solver if not provided
+        if not solver:
+            solver = self.config.solver
+
         logger.info("Optimizing. Depending on the given parameters and your setup, this may take a while.")
+
         self.esm.optimize(solver=solver, declaresOptimizationProblem=False)
 
         return OutputHandler(self.config, self.esm).results
