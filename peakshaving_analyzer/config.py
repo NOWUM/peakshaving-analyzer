@@ -50,3 +50,44 @@ class Config:
     timestamps: pd.DatetimeIndex | None = None
     n_timesteps: int | None = None
     hours_per_timestep: float | None = None
+
+
+@dataclass
+class Results:
+    # general parameters
+    name: str
+
+    # output timeseries
+    grid_usage_kw: pd.Series | None = None
+    storage_charge_kw: pd.Series | None = None
+    storage_discharge_kw: pd.Series | None = None
+    storage_soc_kwh: pd.Series | None = None
+    solar_generation_kw: pd.Series | None = None
+    consumption_kw: pd.Series | None = None
+    energy_price_eur: pd.Series | None = None
+
+    # energy costs itself
+    energy_costs_eur: float | None = None
+
+    # grid energy and capacity costs
+    grid_energy_costs_eur: float | None = None
+    grid_capacity_costs_eur: float | None = None
+    grid_capacity_kw: float | None = None
+
+    # storage system costs
+    storage_invest_eur: float | None = None
+    storage_annuity_eur: float | None = None
+    storage_capacity_kwh: float | None = None
+    inverter_invest_eur: float | None = None
+    inverter_annuity_eur: float | None = None
+    inverter_capacity_kw: float | None = None
+
+    # solar system costs
+    solar_invest_eur: float | None = None
+    solar_annuity_eur: float | None = None
+    solar_capacity_kwp: float | None = None
+
+    # total costs
+    total_costs: float | None = None
+    total_annuity_eur: float | None = None
+    total_invest_eur: float | None = None

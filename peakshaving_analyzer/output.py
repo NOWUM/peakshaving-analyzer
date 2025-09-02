@@ -7,7 +7,7 @@ import sqlalchemy
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
-from peakshaving_analyzer import Config
+from peakshaving_analyzer import Config, Results
 
 log = logging.getLogger("DatabaseHandler")
 
@@ -25,6 +25,214 @@ class OutputHandler:
     def __init__(self, config: Config, esm: fn.EnergySystemModel) -> None:
         self.config = config
         self.esm = esm
+
+        data = {}
+        data["name"] = config.name
+
+        self._retrieve_timeseries(data)
+        log.info("Retrieved timeseries")
+        print("Retrieved timeseries")
+
+        self._retrieve_system_sizes(data)
+        log.info("Retrieved system sizes")
+        print("Retrieved system sizes")
+
+        self._retrieve_system_costs(data)
+        log.info("Retrieved system costs")
+        print("Retrieved system costs")
+
+        self.results = Results(**data)
+
+    def _get_val_from_summary(self, model_name: str, index: tuple[str], location) -> float:
+        try:
+            return self.esm.getOptimizationSummary(model_name).loc[index, location]
+        except KeyError:
+            log.warning(f"KeyError: {index} not found in {model_name} model.")
+            return 0.0
+
+    def _get_optimum_ts(self, model_name: str, variable: str, index: tuple[str]) -> pd.Series:
+        """Retrieves optimum timeseries from ESM.
+
+        Args:
+            model_name (str): Component model name.
+            variable (str): The variable to get.
+            index (tuple[str]): Index to use.
+
+        Returns:
+            pd.Series: Optimum timeseries
+        """
+
+        try:
+            mdl = self.esm.componentModelingDict[model_name]
+            vals_df = mdl.getOptimalValues(variable)["values"]
+
+            s = vals_df.loc[index]
+        except Exception as e:
+            print(model_name, variable, index)
+            raise e
+
+        return s
+
+    def _retrieve_timeseries(self, data: dict[str]) -> None:
+        """Writes optimum timeseries to database."""
+
+        data["grid_usage_kw"] = (
+            self._get_optimum_ts(
+                model_name="SourceSinkModel",
+                variable="operationVariablesOptimum",
+                index=("grid", "grid"),
+            )
+            / self.config.hours_per_timestep
+        )
+
+        if self.config.add_storage:
+            data["storage_charge_kw"] = (
+                self._get_optimum_ts(
+                    model_name="StorageModel",
+                    variable="chargeOperationVariablesOptimum",
+                    index=("storage", "consumption_site"),
+                )
+                / self.config.hours_per_timestep,
+            )
+
+            data["storage_discharge_kw"] = (
+                self._get_optimum_ts(
+                    model_name="StorageModel",
+                    variable="dischargeOperationVariablesOptimum",
+                    index=("storage", "consumption_site"),
+                )
+                / self.config.hours_per_timestep
+            )
+
+            data["storage_soc_kwh"] = (
+                self._get_optimum_ts(
+                    model_name="StorageModel",
+                    variable="stateOfChargeOperationVariablesOptimum",
+                    index=("storage", "consumption_site"),
+                )
+                / self.config.hours_per_timestep,
+            )
+
+        else:
+            data["storage_charge_kw"] = pd.Series(0, index=list(range(self.config.n_timesteps)))
+            data["storage_discharge_kw"] = pd.Series(0, index=list(range(self.config.n_timesteps)))
+            data["storage_soc_kwh"] = pd.Series(0, index=list(range(self.config.n_timesteps)))
+
+        if self.config.add_solar:
+            data["solar_generation_kw"] = (
+                self._get_optimum_ts(
+                    model_name="SourceSinkModel",
+                    variable="operationVariablesOptimum",
+                    index=("PV", "consumption_site"),
+                )
+                / self.config.hours_per_timestep
+            )
+        else:
+            data["solar_generation_kw"] = pd.Series(0, index=list(range(self.config.n_timesteps)))
+
+        data["consumption_kw"] = self.config.consumption_timeseries
+        data["energy_price_eur"] = self.config.price_timeseries["grid"]
+
+    def _retrieve_system_sizes(self, data: dict):
+        data["grid_capacity_kw"] = self._get_val_from_summary(
+            model_name="TransmissionModel",
+            index=("capacity_price", "capacity", "[kWh]", "grid"),
+            location="consumption_site",
+        )
+
+        data["storage_capacity_kwh"] = self._get_val_from_summary(
+            model_name="StorageModel",
+            index=("storage", "capacity", "[kWh*h]"),
+            location="consumption_site",
+        )
+
+        data["inverter_capacity_kw"] = self._get_val_from_summary(
+            model_name="ConversionModel",
+            index=("from_storage", "capacity", "[kWh]"),
+            location="consumption_site",
+        )
+
+        data["solar_capacity_kwp"] = self._get_val_from_summary(
+            model_name="SourceSinkModel",
+            index=("PV", "capacity", "[kWh]"),
+            location="consumption_site",
+        )
+
+    def _retrieve_system_costs(self, data: dict[str]) -> None:
+        # energy itself
+        data["energy_costs_eur"] = self._get_val_from_summary(
+            model_name="SourceSinkModel",
+            index=("grid", "TAC", "[Euro/a]"),
+            location="grid",
+        )
+
+        # grid data
+        data["grid_energy_costs_eur"] = self._get_val_from_summary(
+            model_name="TransmissionModel",
+            index=("capacity_price", "operation", "[kWh*h]", "grid"),
+            location="consumption_site",
+        )
+        data["grid_capacity_costs_eur"] = (
+            self._get_val_from_summary(
+                model_name="TransmissionModel",
+                index=("capacity_price", "invest", "[Euro]", "grid"),
+                location="consumption_site",
+            )
+            * 2
+        )
+
+        # storage data
+        data["storage_invest_eur"] = self._get_val_from_summary(
+            model_name="StorageModel",
+            index=("storage", "invest", "[Euro]"),
+            location="consumption_site",
+        )
+        data["storage_annuity_eur"] = self._get_val_from_summary(
+            model_name="StorageModel",
+            index=("storage", "TAC", "[Euro/a]"),
+            location="consumption_site",
+        )
+
+        # inverter data
+        data["inverter_invest_eur"] = self._get_val_from_summary(
+            model_name="ConversionModel",
+            index=("from_storage", "invest", "[Euro]"),
+            location="consumption_site",
+        )
+        data["inverter_annuity_eur"] = self._get_val_from_summary(
+            model_name="ConversionModel",
+            index=("from_storage", "TAC", "[Euro/a]"),
+            location="consumption_site",
+        )
+
+        # solar data
+        data["solar_invest_eur"] = self._get_val_from_summary(
+            model_name="SourceSinkModel",
+            index=("PV", "invest", "[Euro]"),
+            location="consumption_site",
+        )
+        data["solar_annuity_eur"] = self._get_val_from_summary(
+            model_name="SourceSinkModel",
+            index=("PV", "TAC", "[Euro/a]"),
+            location="consumption_site",
+        )
+
+        # # calculate total costs
+        # data["total_yearly_costs_eur"] = \
+        #     data["energy_costs_eur"] + \
+        #     data["grid_energy_costs_eur"] + \
+        #     data["grid_capacity_costs_eur"] + \
+        #     data["storage_annuity_eur"] + \
+        #     data["inverter_annuity_eur"] + \
+        #     data["solar_annuity_eur"]
+        # data["total_annuity_eur"] = \
+        #     data["storage_annuity_eur"] + \
+        #     data["inverter_annuity_eur"] + \
+        #     data["solar_annuity_eur"]
+        # data["total_invest_eur"] = \
+        #     data["storage_invest_eur"] + \
+        #     data["inverter_invest_eur"] + \
+        #     data["solar_invest_eur"]
 
 
 class STDHandler(OutputHandler):
@@ -112,7 +320,7 @@ class DatabaseHandler(OutputHandler):
         self.save_config()
         self.save_input_timeseries()
         self.save_opti_data()
-        self.save_output_timeseries()
+        self._retrieve_timeseries()
 
         log.info("All data saved to database.")
 
@@ -158,196 +366,16 @@ class DatabaseHandler(OutputHandler):
         # write to sql
         self._df_to_sql(df, "timeseries", "input")
 
-    def _get_val_from_sum(self, model_name: str, index: tuple[str], location) -> float:
-        try:
-            return self.esm.getOptimizationSummary(model_name).loc[index, location]
-        except KeyError:
-            log.warning(f"KeyError: {index} not found in {model_name} model.")
-            return 0.0
-
-    def _get_optimum_ts(self, model_name: str, variable: str, index: tuple[str]) -> pd.Series:
-        """Retrieves optimum timeseries from ESM.
-
-        Args:
-            model_name (str): Component model name.
-            variable (str): The variable to get.
-            index (tuple[str]): Index to use.
-
-        Returns:
-            pd.Series: Optimum timeseries
-        """
-
-        try:
-            mdl = self.esm.componentModelingDict[model_name]
-            vals_df = mdl.getOptimalValues(variable)["values"]
-
-            s = vals_df.loc[index]
-        except Exception as e:
-            print(model_name, variable, index)
-            raise e
-
-        return s
-
-    def save_output_timeseries(self):
-        """Writes optimum timeseries to database."""
-
-        df = pd.DataFrame()
-        df["timestamp"] = self.config.timestamps
-        df["name"] = self.config.name
-
-        df["grid_usage_kw"] = (
-            self._get_optimum_ts(
-                model_name="SourceSinkModel",
-                variable="operationVariablesOptimum",
-                index=("grid", "grid"),
-            )
-            / self.config.hours_per_timestep
-        )
-
-        if self.config.add_storage:
-            df["storage_charge_kw"] = (
-                self._get_optimum_ts(
-                    model_name="StorageModel",
-                    variable="chargeOperationVariablesOptimum",
-                    index=("storage", "consumption_site"),
-                )
-                / self.config.hours_per_timestep
-            )
-            df["storage_discharge_kw"] = (
-                self._get_optimum_ts(
-                    model_name="StorageModel",
-                    variable="dischargeOperationVariablesOptimum",
-                    index=("storage", "consumption_site"),
-                )
-                / self.config.hours_per_timestep
-            )
-            df["storage_soc_kwh"] = (
-                self._get_optimum_ts(
-                    model_name="StorageModel",
-                    variable="stateOfChargeOperationVariablesOptimum",
-                    index=("storage", "consumption_site"),
-                )
-                / self.config.hours_per_timestep
-            )
-        else:
-            df["storage_charge_kw"] = 0
-            df["storage_discharge_kw"] = 0
-            df["storage_soc_kwh"] = 0
-
-        if self.config.add_solar:
-            df["solar_generation_kw"] = (
-                self._get_optimum_ts(
-                    model_name="SourceSinkModel",
-                    variable="operationVariablesOptimum",
-                    index=("PV", "consumption_site"),
-                )
-                / self.config.hours_per_timestep
-            )
-        else:
-            df["solar_generation_kw"] = 0
-
-        df["consumption_kw"] = self.config.consumption_timeseries
-        df["energy_price_eur"] = self.config.price_timeseries["grid"]
-
-        self._df_to_sql(df, "timeseries", "output")
-
     def save_opti_data(self) -> None:
         """Writes the data to the database."""
         log.info("Saving data to database.")
 
         # create DataFrame
-        eco_df = pd.DataFrame()
-        tech_df = pd.DataFrame()
-        eco_df["name"] = [self.name]
-        tech_df["name"] = [self.name]
-
-        # energy itself
-        eco_df["energy_costs_eur"] = [
-            self._get_val_from_sum(
-                model_name="SourceSinkModel",
-                index=("grid", "TAC", "[Euro/a]"),
-                location="grid",
-            )
-        ]
-
-        # grid data
-        eco_df["grid_energy_costs_eur"] = [
-            self._get_val_from_sum(
-                model_name="TransmissionModel",
-                index=("capacity_price", "operation", "[kWh*h]", "grid"),
-                location="consumption_site",
-            )
-        ]
-        eco_df["grid_capacity_costs_eur"] = [
-            self._get_val_from_sum(
-                model_name="TransmissionModel",
-                index=("capacity_price", "invest", "[Euro]", "grid"),
-                location="consumption_site",
-            )
-            * 2
-        ]
-        tech_df["grid_capacity_kw"] = [
-            self._get_val_from_sum(
-                model_name="TransmissionModel",
-                index=("capacity_price", "capacity", "[kWh]", "grid"),
-                location="consumption_site",
-            )
-        ]
-
-        # storage data
-        eco_df["storage_invest_eur"] = self._get_val_from_sum(
-            model_name="StorageModel",
-            index=("storage", "invest", "[Euro]"),
-            location="consumption_site",
-        )
-        eco_df["storage_annuity_eur"] = self._get_val_from_sum(
-            model_name="StorageModel",
-            index=("storage", "TAC", "[Euro/a]"),
-            location="consumption_site",
-        )
-        tech_df["storage_capacity_kwh"] = self._get_val_from_sum(
-            model_name="StorageModel",
-            index=("storage", "capacity", "[kWh*h]"),
-            location="consumption_site",
-        )
-
-        # inverter data
-        eco_df["inverter_invest_eur"] = self._get_val_from_sum(
-            model_name="ConversionModel",
-            index=("from_storage", "invest", "[Euro]"),
-            location="consumption_site",
-        )
-        eco_df["inverter_annuity_eur"] = self._get_val_from_sum(
-            model_name="ConversionModel",
-            index=("from_storage", "TAC", "[Euro/a]"),
-            location="consumption_site",
-        )
-        tech_df["inverter_capacity_kw"] = self._get_val_from_sum(
-            model_name="ConversionModel",
-            index=("from_storage", "capacity", "[kWh]"),
-            location="consumption_site",
-        )
-
-        # solar data
-        eco_df["solar_invest_eur"] = self._get_val_from_sum(
-            model_name="SourceSinkModel",
-            index=("PV", "invest", "[Euro]"),
-            location="consumption_site",
-        )
-        eco_df["solar_annuity_eur"] = self._get_val_from_sum(
-            model_name="SourceSinkModel",
-            index=("PV", "TAC", "[Euro/a]"),
-            location="consumption_site",
-        )
-        tech_df["solar_capacity_kwp"] = self._get_val_from_sum(
-            model_name="SourceSinkModel",
-            index=("PV", "capacity", "[kWh]"),
-            location="consumption_site",
-        )
-
-        # calculate total costs
-        eco_df["total_costs_eur"] = eco_df.drop(columns="name").sum(axis=1)
+        data = pd.DataFrame()
+        data = pd.DataFrame()
+        data["name"] = [self.name]
+        data["name"] = [self.name]
 
         # write to sql
-        self._df_to_sql(eco_df, "eco", "output")
-        self._df_to_sql(tech_df, "tech", "output")
+        self._df_to_sql(data, "eco", "output")
+        self._df_to_sql(data, "tech", "output")

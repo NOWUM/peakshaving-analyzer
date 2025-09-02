@@ -4,7 +4,7 @@ import fine as fn
 import numpy as np
 import pandas as pd
 
-from peakshaving_analyzer import Config, DatabaseHandler
+from peakshaving_analyzer import Config, OutputHandler
 
 logger = logging.getLogger("peakshaving_analyzer")
 
@@ -14,6 +14,8 @@ class PeakShavingAnalyzer:
         self,
         config: Config,
     ) -> None:
+        self.config = config
+
         self.consumption_timeseries = config.consumption_timeseries
         self.price_timeseries = config.price_timeseries
         self.hours_per_timestep = config.hours_per_timestep
@@ -220,19 +222,20 @@ class PeakShavingAnalyzer:
         logger.info("Optimizing. Depending on the given parameters and your setup, this may take a while.")
         self.esm.optimize(solver=solver, declaresOptimizationProblem=False)
 
+        return OutputHandler(self.config, self.esm).results
+
     def save_results(self, config):
         """Save the results of the optimization to the database.
 
         Args:
             config (Config): LPA Config
         """
+        # DBHandler = DatabaseHandler(
+        #     config=config,
+        #     esm=self.esm,
+        # )
 
-        DBHandler = DatabaseHandler(
-            config=config,
-            esm=self.esm,
-        )
-
-        DBHandler.save_all()
+        # DBHandler.save_all()
 
     def build_and_optimize(
         self,
