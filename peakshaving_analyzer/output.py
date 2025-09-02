@@ -1,5 +1,6 @@
 import logging
 from copy import deepcopy
+from dataclasses import asdict
 
 import fine as fn
 import pandas as pd
@@ -31,15 +32,12 @@ class OutputHandler:
 
         self._retrieve_timeseries(data)
         log.info("Retrieved timeseries")
-        print("Retrieved timeseries")
 
         self._retrieve_system_sizes(data)
         log.info("Retrieved system sizes")
-        print("Retrieved system sizes")
 
         self._retrieve_system_costs(data)
         log.info("Retrieved system costs")
-        print("Retrieved system costs")
 
         self.results = Results(**data)
 
@@ -92,7 +90,7 @@ class OutputHandler:
                     variable="chargeOperationVariablesOptimum",
                     index=("storage", "consumption_site"),
                 )
-                / self.config.hours_per_timestep,
+                / self.config.hours_per_timestep
             )
 
             data["storage_discharge_kw"] = (
@@ -110,7 +108,7 @@ class OutputHandler:
                     variable="stateOfChargeOperationVariablesOptimum",
                     index=("storage", "consumption_site"),
                 )
-                / self.config.hours_per_timestep,
+                / self.config.hours_per_timestep
             )
 
         else:
@@ -127,6 +125,7 @@ class OutputHandler:
                 )
                 / self.config.hours_per_timestep
             )
+
         else:
             data["solar_generation_kw"] = pd.Series(0, index=list(range(self.config.n_timesteps)))
 
@@ -236,7 +235,16 @@ class OutputHandler:
 
 
 class STDHandler(OutputHandler):
-    pass
+    def __init__(self, config, esm):
+        super().__init__(config, esm)
+
+        results_dict = asdict(self.results)
+
+        for key, value in results_dict.items():
+            if isinstance(value, pd.Series) or isinstance(value, pd.DataFrame):
+                continue
+            else:
+                print(f"{key}: {value}")
 
 
 class CSVHandler(OutputHandler):
