@@ -47,7 +47,7 @@ class PeakShavingAnalyzer:
         self.pv_system_lifetime = config.pv_system_lifetime
 
         if self.add_sol:
-            self.solar_timeseries = config.solar_timeseries
+            self.solar_generation_timeseries = config.solar_generation_timeseries
 
         self.solver = config.solver
 
@@ -146,7 +146,7 @@ class PeakShavingAnalyzer:
                 name="PV",
                 commodity="energy",
                 hasCapacityVariable=True,
-                operationRateMax=self.solar_timeseries,
+                operationRateMax=self.solar_generation_timeseries,
                 capacityMax=self.max_pv_system_size_kwp,
                 investPerCapacity=self.pv_system_cost_per_kwp,
                 interestRate=self.interest_rate,

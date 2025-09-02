@@ -151,7 +151,7 @@ class DatabaseHandler(OutputHandler):
         df["price_eur"] = self.config.price_timeseries["grid"]
 
         if self.config.add_solar:
-            df["solar_generation"] = self.config.solar_timeseries["consumption_site"]
+            df["solar_generation"] = self.config.solar_generation_timeseries["consumption_site"]
         else:
             df["solar_generation"] = 0
 

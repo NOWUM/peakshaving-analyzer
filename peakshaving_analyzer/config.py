@@ -122,13 +122,13 @@ class Config:
             self.postal_code = config.get("solar_timeseries").get("postal_code")
             if self.postal_code:
                 log.info("Fetching solar timeseries using postal code.")
-                self.solar_timeseries = self.fetch_solar_timeseries()
+                self.solar_generation_timeseries = self.fetch_solar_timeseries()
             else:
                 log.info("Reading solar timeseries from CSV file.")
-                self.solar_timeseries = self.read_solar_timeseries(config=config)
+                self.solar_generation_timeseries = self.read_solar_timeseries(config=config)
 
             # fill NaN with 0
-            self.solar_timeseries.fillna(0, inplace=True)
+            self.solar_generation_timeseries.fillna(0, inplace=True)
 
         self.check_timeseries_length()
 
@@ -375,8 +375,8 @@ class Config:
             msg = "Length of price timeseries does not match expected number of timesteps. "
             msg += f"Expected number of timesteps: {self.n_timesteps}, given timesteps: {len(self.price_timeseries)}"
             raise ValueError(msg)
-        if hasattr(self, "solar_timeseries") and len(self.solar_timeseries) != self.n_timesteps:
+        if hasattr(self, "solar_timeseries") and len(self.solar_generation_timeseries) != self.n_timesteps:
             msg = "Length of solar timeseries does not match expected number of timesteps. "
-            msg += f"Expected number of timesteps: {self.n_timesteps}, given timesteps: {len(self.solar_timeseries)}"
+            msg += f"Expected number of timesteps: {self.n_timesteps}, given timesteps: {len(self.solar_generation_timeseries)}"
             raise ValueError(msg)
         log.info("Timeseries length check passed.")
