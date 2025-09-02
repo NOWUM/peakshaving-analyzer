@@ -21,24 +21,24 @@ verbose: True   # Wether to print optimization progress or not
 ##############
 # name of the column where timestamps are provided (should be equal in all files)
 # can be set to None if timestamps are not provided, we will then assume timestamps based on pattern
-timestamp_column: timestamp
+timestamp_column:
 
 consumption_file_path: consumption.csv   # file path where consumption is stored as .csv
 consumption_value_column: consumption    # name of the column where consumption is provided
 
-price_file_path: price.csv      # file path where prices are stored as .csv
-price_value_column: price       # name of the column where prices are provided
+price_file_path:  # file path where prices are stored as .csv
+price_value_column: # name of the column where prices are provided
 
 postal_code: 52066   # postal code for automtic solar generation calculation, leave empty for own timeseries
 # if not provided, solar generation will be calculated with the following parameters
 # value column needs to contain values from 0 (no solar generation) to 1 (max solar generation)
-solar_file_path: solar.csv   # file path where solar generation is stored as .csv
-solar_value_column: solar_generation                  # name of the column where solar generation is provided
+solar_file_path:   # file path where solar generation is stored as .csv
+solar_value_column:                  # name of the column where solar generation is provided
 
 #######################
 # economic parameters #
 #######################
-overwrite_price_timeseries: False         # Wether to overwrite price timeseries or not
+overwrite_price_timeseries: True         # Wether to overwrite price timeseries or not
 producer_energy_price: 0.1665 # €/kWh     # energy price if sourced from supplier
 # value for 2024 taken from:
 # https://www.bdew.de/service/daten-und-grafiken/bdew-strompreisanalyse/
