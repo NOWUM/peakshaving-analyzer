@@ -59,17 +59,101 @@ This will launch a container for TimescaleDB and Grafana with preconfigured dash
 
 ## Usage
 
+You can use Peak Shaving Analyzer flexibly – either with a YAML configuration file, directly from Python code or use the [OpenEnergyDataServer](https://github.com/open-energy-data-server/open-energy-data-server). Results can be saved locally as files or in a database.
+
+### Loading the Configuration
+
+**1. Load from YAML configuration file:**
+```python
+from peakshaving_analyzer import PeakShavingAnalyzer, load_yaml_config
+
+config = load_yaml_config("/path/to/your/config.yml")
 ```
-from peakshaving_analyzer import Config, PeakShavingAnalyzer
 
+**2. Load from OEDS:**
+```python
+from peakshaving_analyzer import PeakShavingAnalyzer, load_oeds_config
 
-config = Config("/path/to/your/config/file.yml")
+config = load_oeds_config(load_oeds_config(con="your/database/uri", profile_id=id_to_analyze))
+```
+
+**3. Load from a Python dictionary:**
+
+Please note that a lot of configuration is done by the loaders, so it's best to use one of the provided loaders.
+```python
+from peakshaving_analyzer import PeakShavingAnalyzer, Config
+
+config_dict = {
+    "name": "MyScenario",
+    "consumption_timeseries": [...],
+    # further parameters
+}
+config = Config(config_dict)
+```
+
+### Initialize the Peakshaving Analyzer and run it:
+
+Running the `optimize()` method will return a `Results` object.
+```python
 psa = PeakShavingAnalyzer(config=config)
+results = psa.optimize(solver="your_prefered_solver")
 ```
 
-The optimization can be adjusted by changing values in the `config.yml` file.
+### Saving Results
 
-If you're connecting to your own database either create the predefined tables or set `overwrite_existing_optimization` to `False` on the first optimization.
+Results objects can be printed to std-out, written to file (.csv, .yaml, .json) or converted to python objects.
+
+**1. Save as file (e.g. CSV, YAML, ...):**
+```python
+results = psa.optimize()
+results.to_csv("results.csv")
+results.to_json("results.json")
+results.to_yaml("results.yaml")
+```
+
+For saving the timeseries, please use the following functions:
+```python
+results = psa.optimize()
+results.timeseries_to_csv("timeseries.csv")
+results.timeseries_to_json("timeseries.json")
+```
+
+
+**2. Save to database (TimescaleDB):**
+If you use the Docker environment, results are automatically written to TimescaleDB. You can also trigger saving explicitly:
+```python
+results = psa.optimize()
+results.to_sql(connection="your/database/uri")
+```
+
+**3. Use as Python object:**
+
+After optimization, results are available as a Python object for further processing:
+```python
+results = psa.optimize()
+# Access individual values
+print(results.total_yearly_costs_eur)
+
+# print everything
+results.print()
+
+# convert to dict or dataframe
+results_dict = results.to_dict()
+results_dataframe = results.to_dataframe()
+```
+
+**4. Plot the resulting timeseries:**
+
+The resulting timeseries (storage charging / discharging, state of charge, solar generation, grid usage, ...) can be easily plotted:
+
+```python
+results = psa.optimize()
+results.plot_timeseries()
+results.plot_consumption_timeseries()
+results.plot_storage_timeseries()
+```
+
+For more details on configuration, see the example files in the `examples` directory.
 
 ## Examples
 
