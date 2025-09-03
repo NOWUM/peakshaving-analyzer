@@ -10,14 +10,14 @@ import requests
 import sqlalchemy
 import yaml
 
-from peakshaving_analyzer.common import Output
+from peakshaving_analyzer.common import IOHandler
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
 @dataclass
-class Config(Output):
+class Config(IOHandler):
     # general parameters
     name: str
     db_uri: str | None = None

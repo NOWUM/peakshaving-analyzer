@@ -7,7 +7,7 @@ import plotly.express as px
 import yaml
 
 
-class Output:
+class IOHandler:
     def print(self, include_timeseries: bool = False):
         for field in fields(self):
             if include_timeseries:

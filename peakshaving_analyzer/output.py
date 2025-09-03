@@ -7,13 +7,13 @@ import pandas as pd
 import sqlalchemy
 
 from peakshaving_analyzer import Config
-from peakshaving_analyzer.common import Output
+from peakshaving_analyzer.common import IOHandler
 
 log = logging.getLogger(__name__)
 
 
 @dataclass
-class Results(Output):
+class Results(IOHandler):
     # general parameters
     name: str
 
