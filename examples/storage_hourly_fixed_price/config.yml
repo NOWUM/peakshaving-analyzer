@@ -3,9 +3,6 @@
 ###########################
 name: storage_hourly_fixed_price    # name of the optimization
 
-db_uri: postgresql://postgres:postgres@localhost:5432/psa    # database connection string
-overwrite_existing_optimization: True                         # Wether to overwrite existing optimization or not
-
 hours_per_timestep: 1    # 1 hour timesteps
 
 add_storage: True   # wether to add storage to optimization or not

@@ -20,7 +20,6 @@ log = logging.getLogger(__name__)
 class Config(IOHandler):
     # general parameters
     name: str
-    db_uri: str | None = None
     overwrite_existing_optimization: bool = False
     add_storage: bool = True
     add_solar: bool = False

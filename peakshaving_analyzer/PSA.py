@@ -25,7 +25,6 @@ class PeakShavingAnalyzer:
         self.add_sol = config.add_solar
         self.auto_opt = config.auto_opt
         self.verbose = config.verbose
-        self.db_uri = config.db_uri
 
         self.interest_rate = config.interest_rate
 
