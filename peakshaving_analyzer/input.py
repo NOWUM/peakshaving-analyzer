@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 import pgeocode
 import requests
+import sqlalchemy
 import yaml
 
 from peakshaving_analyzer.common import Output
@@ -117,9 +118,70 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
     return Config(**data)
 
 
+def load_oeds_config(
+    con: str | sqlalchemy.engine.Connection, profile_id: int, producer_energy_price: float = 0.1665, *args, **kwargs
+) -> Config:
+    data = {}
+
+    data.update(kwargs)
+
+    # set fixed values
+    if "name" not in data:
+        data["name"] = "profile_" + str(profile_id)
+    data["hours_per_timestep"] = 0.25
+    data["producer_energy_price"] = producer_energy_price
+
+    # load consumption timeseries
+    data["consumption_timeseries"] = pd.read_sql(
+        sql=f"""
+        SELECT *
+        FROM vea_industrial_load_profiles.load
+        WHERE id = {profile_id}
+        ORDER BY timestamp ASC
+        """,
+        con=con,
+    )["value"]
+
+    # calculate if consumption is over 2500h full load hours
+    is_over_2500h = data["consumption_timeseries"].sum() / 4 / data["consumption_timeseries"].max() > 2500
+
+    if is_over_2500h:
+        sql_flh_text = "under"
+    else:
+        sql_flh_text = "over"
+
+    _create_timeseries_metadata(data)
+
+    data["price_timeseries"] = _read_or_create_price_timeseries(data)
+
+    # get capacity_price
+    data["grid_capacity_price"] = pd.read_sql(
+        sql=f"""
+        SELECT capacity_price_{sql_flh_text}_2500h_eur_per_kw
+        FROM vea_industrial_load_profiles.master
+        WHERE id = {profile_id}
+        """,
+        con=con,
+    )[f"capacity_price_{sql_flh_text}_2500h_eur_per_kw"].values[0]
+
+    # get energy_price
+    data["grid_energy_price"] = pd.read_sql(
+        sql=f"""
+        SELECT energy_price_{sql_flh_text}_2500h_eur_per_kwh
+        FROM vea_industrial_load_profiles.master
+        WHERE id = {profile_id}
+        """,
+        con=con,
+    )[f"energy_price_{sql_flh_text}_2500h_eur_per_kwh"].values[0]
+
+    _remove_unused_keys(data)
+
+    return Config(**data)
+
+
 def _create_timeseries_metadata(data):
     # if no timestamps are given, we create them
-    if data["timestamps"] is None:
+    if not data.get("timestamps", None):
         data["n_timesteps"] = len(data["consumption_timeseries"])
         data["leap_year"] = _detect_leap_year(data)
         data["assumed_year"] = _assume_year(data)
