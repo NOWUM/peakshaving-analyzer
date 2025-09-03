@@ -91,7 +91,7 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
             ]
             log.info("Solar generation timeseries loaded")
         elif data["postal_code"]:
-            data["solar_generation_timeseries"] = _fetch_solar_timeseries(data["postal_code"])
+            data["solar_generation_timeseries"] = _fetch_solar_timeseries(data)
             log.info("Solar generation timeseries retrieved from brightsky")
         else:
             msg = "No solar generation timeseries available."
@@ -223,7 +223,7 @@ def _read_price_timeseries(data):
     log.info("Reading price timeseries from CSV file.")
     df = pd.read_csv(data["price_file_path"])
     df.rename(
-        columns={data["price_timeseries"][data.get("price_value_column", "value")]: "grid"},
+        columns={data.get("price_value_column", "value"): "grid"},
         inplace=True,
     )
     df["consumption_site"] = 0
@@ -232,10 +232,7 @@ def _read_price_timeseries(data):
     return df[["consumption_site", "grid"]]
 
 
-def _fetch_solar_timeseries(
-    postal_code: int,
-    year: int,
-):
+def _fetch_solar_timeseries(data):
     """
     Read the solar timeseries from brightsky.
 
@@ -245,19 +242,19 @@ def _fetch_solar_timeseries(
     log.info("Fetching solar timeseries from BrightSky API.")
     # convert postal code to coordinates
     nomi = pgeocode.Nominatim("de")
-    q = nomi.query_postal_code(postal_code)
+    q = nomi.query_postal_code(data["postal_code"])
     lat, lon = q["latitude"], q["longitude"]
-    log.info(f"Coordinates for postal code {postal_code}: Latitude={lat}, Longitude={lon}")
+    log.info(f"Coordinates for postal code {data['postal_code']}: Latitude={lat}, Longitude={lon}")
 
     # make API Call
     url = f"https://api.brightsky.dev/weather?lat={lat}&lon={lon}&country=DE"
-    url += f"&date={year}-01-01T00:00:00&last_date={year}-12-31T23:45:00"
+    url += f"&date={data['assumed_year']}-01-01T00:00:00&last_date={data['assumed_year']}-12-31T23:45:00"
     url += "&timezone=auto&format=json"
     log.info(f"Making API call to: {url}")
-    data = requests.get(url).json()
+    weather_data = requests.get(url).json()
 
     # put data in dataframe
-    df = pd.DataFrame(data["weather"])[["solar"]]
+    df = pd.DataFrame(weather_data["weather"])[["solar"]]
     log.info("Solar timeseries data fetched successfully.")
 
     # rename to location in ESM, add grid column with no operation possible
