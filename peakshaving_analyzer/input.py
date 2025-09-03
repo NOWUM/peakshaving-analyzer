@@ -9,12 +9,14 @@ import pgeocode
 import requests
 import yaml
 
+from peakshaving_analyzer.common import Output
+
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
 @dataclass
-class Config:
+class Config(Output):
     # general parameters
     name: str
     db_uri: str | None = None
@@ -32,31 +34,40 @@ class Config:
 
     # economic parameters
     overwrite_price_timeseries: bool = False
-    producer_energy_price: float | None = None
-    grid_capacity_price: float | None = None
-    grid_energy_price: float | None = None
-    pv_system_lifetime: int | None = None
-    pv_system_cost_per_kwp: float | None = None
-    inverter_lifetime: int | None = None
-    inverter_cost_per_kw: float | None = None
-    storage_lifetime: int | None = None
-    storage_cost_per_kwh: float | None = None
-    interest_rate: float | None = None
+    producer_energy_price: float = 0.1665
+    grid_capacity_price: float = 101.22
+    grid_energy_price: float = 0.046
+    pv_system_lifetime: int = 30
+    pv_system_cost_per_kwp: float = 1200.0
+    inverter_lifetime: int = 15
+    inverter_cost_per_kw: float = 180
+    storage_lifetime: int = 15
+    storage_cost_per_kwh: float = 0.5
+    interest_rate: float = 3
 
     # technical parameters
     max_storage_size_kwh: float | None = None
-    storage_charge_efficiency: float | None = None
-    storage_discharge_efficiency: float | None = None
-    storage_charge_rate: float | None = None
-    storage_discharge_rate: float | None = None
-    inverter_efficiency: float | None = None
+    storage_charge_efficiency: float = 0.9
+    storage_discharge_efficiency: float = 0.9
+    storage_charge_rate: float = 1
+    storage_discharge_rate: float = 1
+    inverter_efficiency: float = 0.95
     max_pv_system_size_kwp: float | None = None
-    pv_system_kwp_per_m2: float | None = None
+    pv_system_kwp_per_m2: float = 0.4
 
     # metadata needed for optimization (set by peakshaving analyzer)
     timestamps: pd.DatetimeIndex | None = None
     n_timesteps: int | None = None
     hours_per_timestep: float | None = None
+
+    def timeseries_to_df(self):
+        df = pd.DataFrame()
+
+        df["solar_generation_kw"] = self.solar_generation_kw
+        df["consumption_kw"] = self.consumption_kw
+        df["energy_price_eur"] = self.energy_price_eur
+
+        return df
 
 
 def load_yaml_config(config_file_path: Path | str) -> Config:
@@ -166,6 +177,7 @@ def _read_or_create_price_timeseries(data):
             msg += "Please provide either producer_energy_price or "
             msg += "price_file_path in the configuration file."
             log.error(msg)
+            raise ValueError
 
         # ... or create a timeseries from a fixed price
         else:

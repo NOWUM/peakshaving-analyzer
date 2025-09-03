@@ -1,21 +1,19 @@
-import json
 import logging
-from dataclasses import asdict, dataclass, fields
+from dataclasses import dataclass
 from pathlib import Path
 
 import fine as fn
 import pandas as pd
-import plotly.express as px
 import sqlalchemy
-import yaml
 
 from peakshaving_analyzer import Config
+from peakshaving_analyzer.common import Output
 
-log = logging.getLogger("DatabaseHandler")
+log = logging.getLogger(__name__)
 
 
 @dataclass
-class Results:
+class Results(Output):
     # general parameters
     name: str
 
@@ -54,29 +52,6 @@ class Results:
     total_annuity_eur: float | None = None
     total_invest_eur: float | None = None
 
-    def print(self, include_timeseries: bool = False):
-        for field in fields(self):
-            if include_timeseries:
-                print(f"{field.name}: {getattr(self, field.name)}")
-            elif isinstance(getattr(self, field.name), pd.Series):
-                continue
-            else:
-                print(f"{field.name}: {getattr(self, field.name)}")
-
-    def to_dict(self, include_timeseries: bool = True) -> dict:
-        if include_timeseries:
-            return asdict(self)
-        else:
-            return {k: v for k, v in asdict(self).items() if not isinstance(v, pd.Series)}
-
-    def to_json(self, path: str | Path):
-        with open(path, "w") as f:
-            json.dump(self.to_dict(include_timeseries=False), f, indent=4)
-
-    def to_yaml(self, path: str | Path):
-        with open(path, "w") as f:
-            yaml.safe_dump(self.to_dict(include_timeseries=False), f, sort_keys=False)
-
     def timeseries_to_df(self):
         df = pd.DataFrame()
 
@@ -114,21 +89,8 @@ class Results:
             df["name"] = self.name
             df.to_sql(name=timeseries_table_name, schema=schema, con=connection, if_exists="append", index=False)
 
-    def _plot(self, cols_to_plot: list[str] | None = None):
-        ts_df = self.timeseries_to_df()
-
-        if not cols_to_plot:
-            cols_to_plot = ts_df.columns.tolist()
-
-        fig = px.line(ts_df, x=ts_df.index, y=cols_to_plot)
-        fig.show()
-
-    def plot_timeseries(self):
-        self._plot()
-
     def plot_storage_timeseries(self):
         storage_columns = ["storage_charge_kw", "storage_discharge_kw", "storage_soc_kwh"]
-
         self._plot(cols_to_plot=storage_columns)
 
     def plot_consumption_timeseries(self):
