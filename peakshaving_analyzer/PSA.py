@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from peakshaving_analyzer.input import Config
-from peakshaving_analyzer.output import OutputHandler, Results
+from peakshaving_analyzer.output import Results, create_results
 
 logger = logging.getLogger("peakshaving_analyzer")
 
@@ -228,7 +228,9 @@ class PeakShavingAnalyzer:
 
         self.esm.optimize(solver=solver, declaresOptimizationProblem=False)
 
-        return OutputHandler(self.config, self.esm).results
+        results = create_results(self.config, self.esm)
+
+        return results
 
     def build_and_optimize(
         self,

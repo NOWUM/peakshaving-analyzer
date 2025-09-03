@@ -1,25 +1,17 @@
+import json
 import logging
-from copy import deepcopy
 from dataclasses import asdict, dataclass, fields
+from pathlib import Path
 
 import fine as fn
 import pandas as pd
+import plotly.express as px
 import sqlalchemy
-from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError
+import yaml
 
 from peakshaving_analyzer import Config
 
 log = logging.getLogger("DatabaseHandler")
-
-
-TABLES = [
-    "input.parameters",
-    "input.timeseries",
-    "output.tech",
-    "output.eco",
-    "output.timeseries",
-]
 
 
 @dataclass
@@ -58,363 +50,311 @@ class Results:
     solar_capacity_kwp: float | None = None
 
     # total costs
-    total_costs: float | None = None
+    total_yearly_costs_eur: float | None = None
     total_annuity_eur: float | None = None
     total_invest_eur: float | None = None
 
-    def print(self):
+    def print(self, include_timeseries: bool = False):
         for field in fields(self):
-            print(f"{field.name}: {getattr(self, field.name)}")
+            if include_timeseries:
+                print(f"{field.name}: {getattr(self, field.name)}")
+            elif isinstance(getattr(self, field.name), pd.Series):
+                continue
 
-    def to_dict(self):
-        return asdict(self)
+    def to_dict(self, include_timeseries: bool = True) -> dict:
+        if include_timeseries:
+            return asdict(self)
+        else:
+            return {k: v for k, v in asdict(self).items() if not isinstance(v, pd.Series)}
+
+    def to_json(self, path: str | Path):
+        with open(path, "w") as f:
+            json.dump(self.to_dict(include_timeseries=False), f, indent=4)
+
+    def to_yaml(self, path: str | Path):
+        with open(path, "w") as f:
+            yaml.safe_dump(self.to_dict(include_timeseries=False), f, sort_keys=False)
+
+    def timeseries_to_df(self):
+        df = pd.DataFrame()
+
+        df["grid_usage_kw"] = self.grid_usage_kw
+        df["storage_charge_kw"] = self.storage_charge_kw
+        df["storage_discharge_kw"] = self.storage_discharge_kw
+        df["storage_soc_kwh"] = self.storage_soc_kwh
+        df["solar_generation_kw"] = self.solar_generation_kw
+        df["consumption_kw"] = self.consumption_kw
+        df["energy_price_eur"] = self.energy_price_eur
+
+        return df
+
+    def timeseries_to_csv(self, path: str | Path):
+        df = self.timeseries_to_df()
+        df.to_csv(path)
+
+    def timeseries_to_json(self, path: str | Path):
+        df = self.timeseries_to_df()
+        df.to_json(path)
+
+    def to_sql(
+        self,
+        connection: str | sqlalchemy.engine.Connection,
+        include_timeseries: bool = True,
+        overview_table_name: str = "overview",
+        timeseries_table_name: str = "timeseries",
+        schema: str = "public",
+    ) -> None:
+        df = pd.DataFrame([self.to_dict(include_timeseries=False)])
+        df.to_sql(name=overview_table_name, schema=schema, con=connection, if_exists="append", index=False)
+
+        if include_timeseries:
+            df = self.timeseries_to_df()
+            df["name"] = self.name
+            df.to_sql(name=timeseries_table_name, schema=schema, con=connection, if_exists="append", index=False)
+
+    def _plot(self, cols_to_plot: list[str] | None = None):
+        ts_df = self.timeseries_to_df()
+
+        if not cols_to_plot:
+            cols_to_plot = ts_df.columns.tolist()
+
+        fig = px.line(ts_df, x=ts_df.index, y=cols_to_plot)
+        fig.show()
+
+    def plot_timeseries(self):
+        self._plot()
+
+    def plot_storage_timeseries(self):
+        storage_columns = ["storage_charge_kw", "storage_discharge_kw", "storage_soc_kwh"]
+
+        self._plot(cols_to_plot=storage_columns)
+
+    def plot_consumption_timeseries(self):
+        consumption_columns = ["grid_usage_kw", "storage_discharge_kw", "solar_generation_kw", "consumption_kw"]
+        self._plot(cols_to_plot=consumption_columns)
 
 
-class OutputHandler:
-    def __init__(self, config: Config, esm: fn.EnergySystemModel) -> None:
-        self.config = config
-        self.esm = esm
+def create_results(config: Config, esm: fn.EnergySystemModel) -> Results:
+    data = {}
+    data["name"] = config.name
 
-        data = {}
-        data["name"] = config.name
+    _retrieve_timeseries(data, esm=esm, config=config)
+    log.info("Retrieved timeseries")
 
-        self._retrieve_timeseries(data)
-        log.info("Retrieved timeseries")
+    _retrieve_system_sizes(data, esm=esm)
+    log.info("Retrieved system sizes")
 
-        self._retrieve_system_sizes(data)
-        log.info("Retrieved system sizes")
+    _retrieve_system_costs(data, esm=esm)
+    log.info("Retrieved system costs")
 
-        self._retrieve_system_costs(data)
-        log.info("Retrieved system costs")
+    return Results(**data)
 
-        self.results = Results(**data)
 
-    def _get_val_from_summary(self, model_name: str, index: tuple[str], location) -> float:
-        try:
-            return self.esm.getOptimizationSummary(model_name).loc[index, location]
-        except KeyError:
-            log.warning(f"KeyError: {index} not found in {model_name} model.")
-            return 0.0
+def _get_val_from_summary(esm: fn.EnergySystemModel, model_name: str, index: tuple[str], location) -> float:
+    try:
+        return esm.getOptimizationSummary(model_name).loc[index, location]
+    except KeyError:
+        log.warning(f"KeyError: {index} not found in {model_name} model.")
+        return 0.0
 
-    def _get_optimum_ts(self, model_name: str, variable: str, index: tuple[str]) -> pd.Series:
-        """Retrieves optimum timeseries from ESM.
 
-        Args:
-            model_name (str): Component model name.
-            variable (str): The variable to get.
-            index (tuple[str]): Index to use.
+def _get_optimum_ts(esm: fn.EnergySystemModel, model_name: str, variable: str, index: tuple[str]) -> pd.Series:
+    """Retrieves optimum timeseries from ESM.
 
-        Returns:
-            pd.Series: Optimum timeseries
-        """
+    Args:
+        model_name (str): Component model name.
+        variable (str): The variable to get.
+        index (tuple[str]): Index to use.
 
-        try:
-            mdl = self.esm.componentModelingDict[model_name]
-            vals_df = mdl.getOptimalValues(variable)["values"]
+    Returns:
+        pd.Series: Optimum timeseries
+    """
 
-            s = vals_df.loc[index]
-        except Exception as e:
-            print(model_name, variable, index)
-            raise e
+    try:
+        mdl = esm.componentModelingDict[model_name]
+        vals_df = mdl.getOptimalValues(variable)["values"]
 
-        return s
+        s = vals_df.loc[index]
+    except Exception as e:
+        print(model_name, variable, index)
+        raise e
 
-    def _retrieve_timeseries(self, data: dict[str]) -> None:
-        """Writes optimum timeseries to database."""
+    return s
 
-        data["grid_usage_kw"] = (
-            self._get_optimum_ts(
+
+def _retrieve_timeseries(data: dict[str], esm: fn.EnergySystemModel, config: Config) -> None:
+    """Writes optimum timeseries to database."""
+
+    data["grid_usage_kw"] = (
+        _get_optimum_ts(
+            esm=esm,
+            model_name="SourceSinkModel",
+            variable="operationVariablesOptimum",
+            index=("grid", "grid"),
+        )
+        / config.hours_per_timestep
+    )
+
+    if config.add_storage:
+        data["storage_charge_kw"] = (
+            _get_optimum_ts(
+                esm=esm,
+                model_name="StorageModel",
+                variable="chargeOperationVariablesOptimum",
+                index=("storage", "consumption_site"),
+            )
+            / config.hours_per_timestep
+        )
+
+        data["storage_discharge_kw"] = (
+            _get_optimum_ts(
+                esm=esm,
+                model_name="StorageModel",
+                variable="dischargeOperationVariablesOptimum",
+                index=("storage", "consumption_site"),
+            )
+            / config.hours_per_timestep
+        )
+
+        data["storage_soc_kwh"] = (
+            _get_optimum_ts(
+                esm=esm,
+                model_name="StorageModel",
+                variable="stateOfChargeOperationVariablesOptimum",
+                index=("storage", "consumption_site"),
+            )
+            / config.hours_per_timestep
+        )
+
+    else:
+        data["storage_charge_kw"] = pd.Series(0, index=list(range(config.n_timesteps)))
+        data["storage_discharge_kw"] = pd.Series(0, index=list(range(config.n_timesteps)))
+        data["storage_soc_kwh"] = pd.Series(0, index=list(range(config.n_timesteps)))
+
+    if config.add_solar:
+        data["solar_generation_kw"] = (
+            _get_optimum_ts(
+                esm=esm,
                 model_name="SourceSinkModel",
                 variable="operationVariablesOptimum",
-                index=("grid", "grid"),
+                index=("PV", "consumption_site"),
             )
-            / self.config.hours_per_timestep
+            / config.hours_per_timestep
         )
 
-        if self.config.add_storage:
-            data["storage_charge_kw"] = (
-                self._get_optimum_ts(
-                    model_name="StorageModel",
-                    variable="chargeOperationVariablesOptimum",
-                    index=("storage", "consumption_site"),
-                )
-                / self.config.hours_per_timestep
-            )
+    else:
+        data["solar_generation_kw"] = pd.Series(0, index=list(range(config.n_timesteps)))
 
-            data["storage_discharge_kw"] = (
-                self._get_optimum_ts(
-                    model_name="StorageModel",
-                    variable="dischargeOperationVariablesOptimum",
-                    index=("storage", "consumption_site"),
-                )
-                / self.config.hours_per_timestep
-            )
+    data["consumption_kw"] = config.consumption_timeseries
+    data["energy_price_eur"] = config.price_timeseries["grid"]
 
-            data["storage_soc_kwh"] = (
-                self._get_optimum_ts(
-                    model_name="StorageModel",
-                    variable="stateOfChargeOperationVariablesOptimum",
-                    index=("storage", "consumption_site"),
-                )
-                / self.config.hours_per_timestep
-            )
 
-        else:
-            data["storage_charge_kw"] = pd.Series(0, index=list(range(self.config.n_timesteps)))
-            data["storage_discharge_kw"] = pd.Series(0, index=list(range(self.config.n_timesteps)))
-            data["storage_soc_kwh"] = pd.Series(0, index=list(range(self.config.n_timesteps)))
+def _retrieve_system_sizes(data: dict, esm: fn.EnergySystemModel) -> None:
+    data["grid_capacity_kw"] = _get_val_from_summary(
+        esm=esm,
+        model_name="TransmissionModel",
+        index=("capacity_price", "capacity", "[kWh]", "grid"),
+        location="consumption_site",
+    )
 
-        if self.config.add_solar:
-            data["solar_generation_kw"] = (
-                self._get_optimum_ts(
-                    model_name="SourceSinkModel",
-                    variable="operationVariablesOptimum",
-                    index=("PV", "consumption_site"),
-                )
-                / self.config.hours_per_timestep
-            )
+    data["storage_capacity_kwh"] = _get_val_from_summary(
+        esm=esm,
+        model_name="StorageModel",
+        index=("storage", "capacity", "[kWh*h]"),
+        location="consumption_site",
+    )
 
-        else:
-            data["solar_generation_kw"] = pd.Series(0, index=list(range(self.config.n_timesteps)))
+    data["inverter_capacity_kw"] = _get_val_from_summary(
+        esm=esm,
+        model_name="ConversionModel",
+        index=("from_storage", "capacity", "[kWh]"),
+        location="consumption_site",
+    )
 
-        data["consumption_kw"] = self.config.consumption_timeseries
-        data["energy_price_eur"] = self.config.price_timeseries["grid"]
+    data["solar_capacity_kwp"] = _get_val_from_summary(
+        esm=esm,
+        model_name="SourceSinkModel",
+        index=("PV", "capacity", "[kWh]"),
+        location="consumption_site",
+    )
 
-    def _retrieve_system_sizes(self, data: dict):
-        data["grid_capacity_kw"] = self._get_val_from_summary(
+
+def _retrieve_system_costs(data: dict[str], esm: fn.EnergySystemModel) -> None:
+    # energy itself
+    data["energy_costs_eur"] = _get_val_from_summary(
+        esm=esm,
+        model_name="SourceSinkModel",
+        index=("grid", "TAC", "[Euro/a]"),
+        location="grid",
+    )
+
+    # grid data
+    data["grid_energy_costs_eur"] = _get_val_from_summary(
+        esm=esm,
+        model_name="TransmissionModel",
+        index=("capacity_price", "operation", "[kWh*h]", "grid"),
+        location="consumption_site",
+    )
+    data["grid_capacity_costs_eur"] = (
+        _get_val_from_summary(
+            esm=esm,
             model_name="TransmissionModel",
-            index=("capacity_price", "capacity", "[kWh]", "grid"),
+            index=("capacity_price", "invest", "[Euro]", "grid"),
             location="consumption_site",
         )
+        * 2
+    )
 
-        data["storage_capacity_kwh"] = self._get_val_from_summary(
-            model_name="StorageModel",
-            index=("storage", "capacity", "[kWh*h]"),
-            location="consumption_site",
-        )
+    # storage data
+    data["storage_invest_eur"] = _get_val_from_summary(
+        esm=esm,
+        model_name="StorageModel",
+        index=("storage", "invest", "[Euro]"),
+        location="consumption_site",
+    )
+    data["storage_annuity_eur"] = _get_val_from_summary(
+        esm=esm,
+        model_name="StorageModel",
+        index=("storage", "TAC", "[Euro/a]"),
+        location="consumption_site",
+    )
 
-        data["inverter_capacity_kw"] = self._get_val_from_summary(
-            model_name="ConversionModel",
-            index=("from_storage", "capacity", "[kWh]"),
-            location="consumption_site",
-        )
+    # inverter data
+    data["inverter_invest_eur"] = _get_val_from_summary(
+        esm=esm,
+        model_name="ConversionModel",
+        index=("from_storage", "invest", "[Euro]"),
+        location="consumption_site",
+    )
+    data["inverter_annuity_eur"] = _get_val_from_summary(
+        esm=esm,
+        model_name="ConversionModel",
+        index=("from_storage", "TAC", "[Euro/a]"),
+        location="consumption_site",
+    )
 
-        data["solar_capacity_kwp"] = self._get_val_from_summary(
-            model_name="SourceSinkModel",
-            index=("PV", "capacity", "[kWh]"),
-            location="consumption_site",
-        )
+    # solar data
+    data["solar_invest_eur"] = _get_val_from_summary(
+        esm=esm,
+        model_name="SourceSinkModel",
+        index=("PV", "invest", "[Euro]"),
+        location="consumption_site",
+    )
+    data["solar_annuity_eur"] = _get_val_from_summary(
+        esm=esm,
+        model_name="SourceSinkModel",
+        index=("PV", "TAC", "[Euro/a]"),
+        location="consumption_site",
+    )
 
-    def _retrieve_system_costs(self, data: dict[str]) -> None:
-        # energy itself
-        data["energy_costs_eur"] = self._get_val_from_summary(
-            model_name="SourceSinkModel",
-            index=("grid", "TAC", "[Euro/a]"),
-            location="grid",
-        )
-
-        # grid data
-        data["grid_energy_costs_eur"] = self._get_val_from_summary(
-            model_name="TransmissionModel",
-            index=("capacity_price", "operation", "[kWh*h]", "grid"),
-            location="consumption_site",
-        )
-        data["grid_capacity_costs_eur"] = (
-            self._get_val_from_summary(
-                model_name="TransmissionModel",
-                index=("capacity_price", "invest", "[Euro]", "grid"),
-                location="consumption_site",
-            )
-            * 2
-        )
-
-        # storage data
-        data["storage_invest_eur"] = self._get_val_from_summary(
-            model_name="StorageModel",
-            index=("storage", "invest", "[Euro]"),
-            location="consumption_site",
-        )
-        data["storage_annuity_eur"] = self._get_val_from_summary(
-            model_name="StorageModel",
-            index=("storage", "TAC", "[Euro/a]"),
-            location="consumption_site",
-        )
-
-        # inverter data
-        data["inverter_invest_eur"] = self._get_val_from_summary(
-            model_name="ConversionModel",
-            index=("from_storage", "invest", "[Euro]"),
-            location="consumption_site",
-        )
-        data["inverter_annuity_eur"] = self._get_val_from_summary(
-            model_name="ConversionModel",
-            index=("from_storage", "TAC", "[Euro/a]"),
-            location="consumption_site",
-        )
-
-        # solar data
-        data["solar_invest_eur"] = self._get_val_from_summary(
-            model_name="SourceSinkModel",
-            index=("PV", "invest", "[Euro]"),
-            location="consumption_site",
-        )
-        data["solar_annuity_eur"] = self._get_val_from_summary(
-            model_name="SourceSinkModel",
-            index=("PV", "TAC", "[Euro/a]"),
-            location="consumption_site",
-        )
-
-        # # calculate total costs
-        # data["total_yearly_costs_eur"] = \
-        #     data["energy_costs_eur"] + \
-        #     data["grid_energy_costs_eur"] + \
-        #     data["grid_capacity_costs_eur"] + \
-        #     data["storage_annuity_eur"] + \
-        #     data["inverter_annuity_eur"] + \
-        #     data["solar_annuity_eur"]
-        # data["total_annuity_eur"] = \
-        #     data["storage_annuity_eur"] + \
-        #     data["inverter_annuity_eur"] + \
-        #     data["solar_annuity_eur"]
-        # data["total_invest_eur"] = \
-        #     data["storage_invest_eur"] + \
-        #     data["inverter_invest_eur"] + \
-        #     data["solar_invest_eur"]
-
-
-class DatabaseHandler(OutputHandler):
-    def __init__(self, config: Config, esm: fn.EnergySystemModel) -> None:
-        super().__init__(config, esm)
-        self.engine = sqlalchemy.create_engine(config.db_uri)
-
-        if self.config.verbose:
-            log.setLevel(logging.INFO)
-
-        self.name = deepcopy(config.name)
-        self.overwrite_existing = deepcopy(config.overwrite_existing_optimization)
-
-        self._test_connection()
-
-        if self.overwrite_existing:
-            self._remove_old_optimization()
-
-    def _test_connection(self):
-        """Tries to connect to provided database URI in 5 attempts."""
-        attempt = 0
-        try:
-            self.engine.connect()
-        except sqlalchemy.exc.OperationalError as e:
-            if attempt < 5:
-                attempt += 1
-
-            log.error(f"Could not connect to database in 5 tries: {e}")
-
-            raise e
-
-    def _remove_old_optimization(self):
-        """Removes old optimization data from the database."""
-        log.info("Removing old optimization data from database.")
-        try:
-            with self.engine.connect() as conn:
-                for table in TABLES:
-                    sql = text(f"DELETE FROM {table} WHERE name = '{self.name}'")
-                    conn.execute(sql)
-                conn.commit()
-            log.info("Old optimization data removed from database.")
-        except Exception as e:
-            log.error(f"Error removing old optimization data from database: {e}")
-
-    def _df_to_sql(
-        self,
-        df: pd.DataFrame,
-        table_name: str,
-        schema: str,
-    ) -> None:
-        """Writes a DataFrame to the database.
-
-        Args:
-            df (pd.DataFrame): DataFrame to write.
-            table_name (str): Name of the table to write to.
-        """
-        log.info(f"Writing DataFrame to {table_name} table in database.")
-        try:
-            df.to_sql(
-                name=table_name,
-                schema=schema,
-                con=self.engine,
-                if_exists="append",
-                index=False,
-            )
-            log.info(f"DataFrame written to {schema}.{table_name} table in database.")
-        except IntegrityError as ie:
-            log.error(f"Integrityerror writing DataFrame to {schema}.{table_name} table in database: {ie}")
-            raise ie
-        except Exception as e:
-            log.error(f"Error writing DataFrame to {schema}.{table_name} table in database: {e}")
-            raise e
-
-    def save_all(self) -> None:
-        """Saves all data to the database."""
-        log.info("Saving all data to database.")
-        self.save_config()
-        self.save_input_timeseries()
-        self.save_opti_data()
-        self._retrieve_timeseries()
-
-        log.info("All data saved to database.")
-
-    def save_config(self) -> None:
-        """Writes the configuration to the database."""
-
-        # remove unnecessary keys from config
-        keys_to_exclude = [
-            "timestamps",
-            "consumption_timeseries",
-            "price_timeseries",
-            "solar_timeseries",
-            "db_uri",
-            "overwrite_price_timeseries",
-            "overwrite_existing_optimization",
-            "auto_opt",
-            "verbose",
-        ]
-        conf_to_save = {key: value for key, value in vars(self.config).items() if key not in keys_to_exclude}
-
-        # create dataFrame from config
-        config_df = pd.DataFrame(conf_to_save, index=[0])
-
-        # write to sql
-        self._df_to_sql(config_df, "parameters", "input")
-
-    def save_input_timeseries(self) -> None:
-        """Writes the consumption data to the database."""
-        log.info("Saving consumption data to database.")
-
-        # create DataFrame from config
-        df = pd.DataFrame()
-        df["timestamp"] = self.config.timestamps
-        df["name"] = self.name
-        df["consumption_kw"] = self.config.consumption_timeseries
-        df["price_eur"] = self.config.price_timeseries["grid"]
-
-        if self.config.add_solar:
-            df["solar_generation"] = self.config.solar_generation_timeseries["consumption_site"]
-        else:
-            df["solar_generation"] = 0
-
-        # write to sql
-        self._df_to_sql(df, "timeseries", "input")
-
-    def save_opti_data(self) -> None:
-        """Writes the data to the database."""
-        log.info("Saving data to database.")
-
-        # create DataFrame
-        data = pd.DataFrame()
-        data = pd.DataFrame()
-        data["name"] = [self.name]
-        data["name"] = [self.name]
-
-        # write to sql
-        self._df_to_sql(data, "eco", "output")
-        self._df_to_sql(data, "tech", "output")
+    # calculate total costs
+    data["total_yearly_costs_eur"] = (
+        data["energy_costs_eur"]
+        + data["grid_energy_costs_eur"]
+        + data["grid_capacity_costs_eur"]
+        + data["storage_annuity_eur"]
+        + data["inverter_annuity_eur"]
+        + data["solar_annuity_eur"]
+    )
+    data["total_annuity_eur"] = data["storage_annuity_eur"] + data["inverter_annuity_eur"] + data["solar_annuity_eur"]
+    data["total_invest_eur"] = data["storage_invest_eur"] + data["inverter_invest_eur"] + data["solar_invest_eur"]
