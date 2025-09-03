@@ -190,6 +190,11 @@ def _create_price_timeseries(data):
     """
 
     log.info("Creating price timeseries from fixed price.")
+    if data["producer_energy_price"] < 0:
+        msg = "Producer energy price is negative."
+        log.error(msg)
+        raise ValueError(msg)
+
     df = pd.DataFrame()
 
     year = datetime.now().year - 1
@@ -227,6 +232,7 @@ def _read_price_timeseries(data):
         inplace=True,
     )
     df["consumption_site"] = 0
+    df.loc[df["grid"] < 0, "grid"] = 0  # set negative prices to zero
     log.info("Price timeseries successfully read and processed.")
 
     return df[["consumption_site", "grid"]]
@@ -260,6 +266,8 @@ def _fetch_solar_timeseries(data):
     # rename to location in ESM, add grid column with no operation possible
     df.rename(columns={"solar": "consumption_site"}, inplace=True)
     df["grid"] = 0
+
+    df.fillna(0, inplace=True)
 
     # resample to match hours per timestep
     if data["hours_per_timestep"] != 1:
