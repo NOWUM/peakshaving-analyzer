@@ -4,7 +4,7 @@ import fine as fn
 import numpy as np
 import pandas as pd
 
-from peakshaving_analyzer import Config, OutputHandler
+from peakshaving_analyzer import Config, OutputHandler, Results
 
 logger = logging.getLogger("peakshaving_analyzer")
 
@@ -210,7 +210,7 @@ class PeakShavingAnalyzer:
             )
         )
 
-    def optimize(self, solver: str | None = None):
+    def optimize(self, solver: str | None = None) -> Results:
         logger.info("Creating pyomo model.")
         self.esm.declareOptimizationProblem()
 
@@ -228,19 +228,6 @@ class PeakShavingAnalyzer:
         self.esm.optimize(solver=solver, declaresOptimizationProblem=False)
 
         return OutputHandler(self.config, self.esm).results
-
-    def save_results(self, config):
-        """Save the results of the optimization to the database.
-
-        Args:
-            config (Config): LPA Config
-        """
-        # DBHandler = DatabaseHandler(
-        #     config=config,
-        #     esm=self.esm,
-        # )
-
-        # DBHandler.save_all()
 
     def build_and_optimize(
         self,
@@ -260,7 +247,7 @@ class PeakShavingAnalyzer:
         pv_system_cost_per_kwp: float = 900,
         max_pv_system_size_kwp: float | None = None,
         pv_system_lifetime: int = 30,
-    ):
+    ) -> Results:
         # model building
         self._add_sink()
         self._add_source()
@@ -288,5 +275,5 @@ class PeakShavingAnalyzer:
                 pv_system_lifetime=pv_system_lifetime,
             )
 
-        # optimize
-        self.optimize(solver=self.solver)
+        # optimize and return results
+        return self.optimize()
