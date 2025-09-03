@@ -2,9 +2,8 @@
 
 import logging
 
-from peakshaving_analyzer.config import Config, Results
-from peakshaving_analyzer.input import load_yaml_config
-from peakshaving_analyzer.output import OutputHandler
+from peakshaving_analyzer.input import Config, load_yaml_config
+from peakshaving_analyzer.output import OutputHandler, Results
 from peakshaving_analyzer.PSA import PeakShavingAnalyzer
 
 logging.basicConfig(level=logging.WARNING)

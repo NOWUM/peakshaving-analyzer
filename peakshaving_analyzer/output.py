@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from dataclasses import asdict
+from dataclasses import asdict, dataclass, fields
 
 import fine as fn
 import pandas as pd
@@ -8,7 +8,7 @@ import sqlalchemy
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
-from peakshaving_analyzer import Config, Results
+from peakshaving_analyzer import Config
 
 log = logging.getLogger("DatabaseHandler")
 
@@ -20,6 +20,54 @@ TABLES = [
     "output.eco",
     "output.timeseries",
 ]
+
+
+@dataclass
+class Results:
+    # general parameters
+    name: str
+
+    # output timeseries
+    grid_usage_kw: pd.Series | None = None
+    storage_charge_kw: pd.Series | None = None
+    storage_discharge_kw: pd.Series | None = None
+    storage_soc_kwh: pd.Series | None = None
+    solar_generation_kw: pd.Series | None = None
+    consumption_kw: pd.Series | None = None
+    energy_price_eur: pd.Series | None = None
+
+    # energy costs itself
+    energy_costs_eur: float | None = None
+
+    # grid energy and capacity costs
+    grid_energy_costs_eur: float | None = None
+    grid_capacity_costs_eur: float | None = None
+    grid_capacity_kw: float | None = None
+
+    # storage system costs
+    storage_invest_eur: float | None = None
+    storage_annuity_eur: float | None = None
+    storage_capacity_kwh: float | None = None
+    inverter_invest_eur: float | None = None
+    inverter_annuity_eur: float | None = None
+    inverter_capacity_kw: float | None = None
+
+    # solar system costs
+    solar_invest_eur: float | None = None
+    solar_annuity_eur: float | None = None
+    solar_capacity_kwp: float | None = None
+
+    # total costs
+    total_costs: float | None = None
+    total_annuity_eur: float | None = None
+    total_invest_eur: float | None = None
+
+    def print(self):
+        for field in fields(self):
+            print(f"{field.name}: {getattr(self, field.name)}")
+
+    def to_dict(self):
+        return asdict(self)
 
 
 class OutputHandler:
@@ -232,23 +280,6 @@ class OutputHandler:
         #     data["storage_invest_eur"] + \
         #     data["inverter_invest_eur"] + \
         #     data["solar_invest_eur"]
-
-
-class STDHandler(OutputHandler):
-    def __init__(self, config, esm):
-        super().__init__(config, esm)
-
-        results_dict = asdict(self.results)
-
-        for key, value in results_dict.items():
-            if isinstance(value, pd.Series) or isinstance(value, pd.DataFrame):
-                continue
-            else:
-                print(f"{key}: {value}")
-
-
-class CSVHandler(OutputHandler):
-    pass
 
 
 class DatabaseHandler(OutputHandler):

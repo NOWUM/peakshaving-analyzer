@@ -4,7 +4,8 @@ import fine as fn
 import numpy as np
 import pandas as pd
 
-from peakshaving_analyzer import Config, OutputHandler, Results
+from peakshaving_analyzer.input import Config
+from peakshaving_analyzer.output import OutputHandler, Results
 
 logger = logging.getLogger("peakshaving_analyzer")
 
