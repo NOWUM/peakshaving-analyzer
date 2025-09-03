@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "peakshaving-analyzer"
-version = "0.0.3"
+version = "0.1.0"
 description = "Peak shaving analysis for industrial load profiles"
 authors = [
     { name = "Christoph Komanns", email = "c.komanns@gmail.com" },
@@ -39,6 +39,7 @@ dependencies = [
     "pgeocode >=0.5.0",
     "highspy",
     "gurobipy",
+    "argcomplete",
 ]
 
 [project.optional-dependencies]
@@ -47,17 +48,19 @@ dev = [
     "build >=1.2.2",
 ]
 
+[project.scripts]
+psa = "psa_cli.main:cli"
+
 [project.urls]
 Issues = "https://github.com/assume-framework/assume/issues"
 Repository = "https://github.com/NOWUM/peakshaving-analyzer"
 
 [tool.setuptools.packages.find]
 exclude = ["data*", "examples*", "docker_configs*"]
-include = ["peakshaving_analyzer*"]
+include = ["peakshaving_analyzer*", "psa_cli*"]
 
 [tool.ruff]
 line-length = 120
-
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "G", "PIE"]

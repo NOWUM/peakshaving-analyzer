@@ -61,6 +61,10 @@ This will launch a container for TimescaleDB and Grafana with preconfigured dash
 
 You can use Peak Shaving Analyzer flexibly – either with a YAML configuration file, directly from Python code or use the [OpenEnergyDataServer](https://github.com/open-energy-data-server/open-energy-data-server). Results can be saved locally as files or in a database.
 
+### Using the CLI
+
+Use `psa -h` to see the usage of the CLI tool and it's options.
+
 ### Loading the Configuration
 
 **1. Load from YAML configuration file:**

@@ -72,18 +72,25 @@ class Config(IOHandler):
 
 
 def load_yaml_config(config_file_path: Path | str) -> Config:
+    config_path = Path(config_file_path)
+
     # read in configuration file
-    with open(config_file_path) as file:
+    with open(config_path) as file:
         data = yaml.safe_load(file)
         log.info("Configuration file loaded")
 
+    # set config dir var
+    data["config_dir"] = config_path.parent
+
     # read in consumption timeseries
-    data["consumption_timeseries"] = pd.read_csv(data["consumption_file_path"])[data["consumption_value_column"]]
+    data["consumption_timeseries"] = pd.read_csv(data["config_dir"] / data["consumption_file_path"])[
+        data["consumption_value_column"]
+    ]
     log.info("Consumption timeseries loaded")
 
     # read in timestamps if provided
     if data.get("timestamp_column"):
-        data["timestamps"] = pd.read_csv(data["consumption_file_path"])[data["timestamp_column"]]
+        data["timestamps"] = pd.read_csv(data["config_dir"] / data["consumption_file_path"])[data["timestamp_column"]]
         log.info("Timestamps loaded")
     else:
         data["timestamps"] = None
@@ -98,7 +105,7 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
 
     if data["add_solar"]:
         if data["solar_file_path"]:
-            data["solar_generation_timeseries"] = pd.read_csv(data["solar_file_path"])[
+            data["solar_generation_timeseries"] = pd.read_csv(data["config_dir"] / data["solar_file_path"])[
                 data.get("solar_value_column", "value")
             ]
             log.info("Solar generation timeseries loaded")
@@ -300,7 +307,7 @@ def _read_price_timeseries(data):
         pd.Series: The price timeseries.
     """
     log.info("Reading price timeseries from CSV file.")
-    df = pd.read_csv(data["price_file_path"])
+    df = pd.read_csv(data["config_dir"] / data["price_file_path"])
     df.rename(
         columns={data.get("price_value_column", "value"): "grid"},
         inplace=True,
@@ -441,6 +448,7 @@ def _remove_unused_keys(data):
         "postal_code",
         "leap_year",
         "assumed_year",
+        "config_dir",
     ]
     for key in keys_to_remove:
         data.pop(key, None)
