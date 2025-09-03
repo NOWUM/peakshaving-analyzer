@@ -7,7 +7,7 @@ import pandas as pd
 from peakshaving_analyzer.input import Config
 from peakshaving_analyzer.output import Results, create_results
 
-logger = logging.getLogger("peakshaving_analyzer")
+log = logging.getLogger(__name__)
 
 
 class PeakShavingAnalyzer:
@@ -53,29 +53,31 @@ class PeakShavingAnalyzer:
 
         self.solver = config.solver
 
-        if self.verbose:
-            logger.setLevel(logging.INFO)
+        if config.verbose:
+            log.setLevel(level=logging.INFO)
+        else:
+            log.setLevel(level=logging.WARNING)
 
         self._create_esm()
         self._add_source()
         self._add_transmission()
         self._add_sink()
-        logger.info("Built default ESM.")
+        log.info("Built default ESM.")
 
         if self.add_stor:
             self.add_storage()
-            logger.info("Added storage.")
+            log.info("Added storage.")
 
         if self.add_sol:
             self.add_solar()
-            logger.info("Added solar.")
+            log.info("Added solar.")
 
         if self.auto_opt:
             self.optimize(solver=self.solver)
-            logger.info("Optimized.")
+            log.info("Optimized.")
 
             self.save_results(config)
-            logger.info("Saved results.")
+            log.info("Saved results.")
 
     def _create_esm(self):
         self.esm = fn.EnergySystemModel(
@@ -211,7 +213,7 @@ class PeakShavingAnalyzer:
         )
 
     def optimize(self, solver: str | None = None) -> Results:
-        logger.info("Creating pyomo model.")
+        log.info("Creating pyomo model.")
         self.esm.declareOptimizationProblem()
 
         # add constraint setting storage level on start
@@ -223,7 +225,7 @@ class PeakShavingAnalyzer:
         if not solver:
             solver = self.config.solver
 
-        logger.info("Optimizing. Depending on the given parameters and your setup, this may take a while.")
+        log.info("Optimizing. Depending on the given parameters and your setup, this may take a while.")
 
         self.esm.optimize(solver=solver, declaresOptimizationProblem=False)
 

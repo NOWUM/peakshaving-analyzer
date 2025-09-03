@@ -12,7 +12,6 @@ import yaml
 
 from peakshaving_analyzer.common import IOHandler
 
-logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
@@ -77,6 +76,12 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
     with open(config_path) as file:
         data = yaml.safe_load(file)
         log.info("Configuration file loaded")
+
+    # set log level according to flag
+    if data.get("verbose", True):
+        log.setLevel(level=logging.INFO)
+    else:
+        log.setLevel(level=logging.WARNING)
 
     # set config dir var
     data["config_dir"] = config_path.parent
