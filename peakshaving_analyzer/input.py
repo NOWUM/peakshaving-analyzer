@@ -63,9 +63,9 @@ class Config(IOHandler):
     def timeseries_to_df(self):
         df = pd.DataFrame()
 
-        df["solar_generation_kw"] = self.solar_generation_kw
-        df["consumption_kw"] = self.consumption_kw
-        df["energy_price_eur"] = self.energy_price_eur
+        df["consumption_kw"] = self.consumption_timeseries
+        df["energy_price_eur"] = self.price_timeseries
+        df["solar_generation_kw"] = self.solar_generation_timeseries
 
         return df
 
