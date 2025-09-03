@@ -60,6 +60,8 @@ class Results:
                 print(f"{field.name}: {getattr(self, field.name)}")
             elif isinstance(getattr(self, field.name), pd.Series):
                 continue
+            else:
+                print(f"{field.name}: {getattr(self, field.name)}")
 
     def to_dict(self, include_timeseries: bool = True) -> dict:
         if include_timeseries:
