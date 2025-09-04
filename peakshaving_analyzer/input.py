@@ -41,15 +41,15 @@ class Config(IOHandler):
     inverter_lifetime: int = 15
     inverter_cost_per_kw: float = 180
     storage_lifetime: int = 15
-    storage_cost_per_kwh: float = 0.5
-    interest_rate: float = 3
+    storage_cost_per_kwh: float = 285
+    interest_rate: float = 2
 
     # technical parameters
     max_storage_size_kwh: float | None = None
-    storage_charge_efficiency: float = 0.9
-    storage_discharge_efficiency: float = 0.9
-    storage_charge_rate: float = 1
-    storage_discharge_rate: float = 1
+    storage_charge_efficiency: float = 0.95
+    storage_discharge_efficiency: float = 0.95
+    storage_charge_rate: float = 5
+    storage_discharge_rate: float = 5
     inverter_efficiency: float = 0.95
     max_pv_system_size_kwp: float | None = None
     pv_system_kwp_per_m2: float = 0.4
