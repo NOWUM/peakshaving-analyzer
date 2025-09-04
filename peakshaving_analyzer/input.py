@@ -132,7 +132,7 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
 def load_oeds_config(
     con: str | sqlalchemy.engine.Connection,
     profile_id: int,
-    price_inflation_percent: float = 0,
+    price_inflation_percent: float = 26.24,
     use_given_grid_prices: bool = True,
     producer_energy_price: float = 0.1665,
     *args,
@@ -147,7 +147,7 @@ def load_oeds_config(
     Args:
         con (str or sqlalchemy.engine.Connection): Database connection string or SQLAlchemy connection object.
         profile_id (int): The profile ID to load from the database.
-        price_inflation_percent (float, optional): Percentage to inflate grid prices. Default is 0.
+        price_inflation_percent (float, optional): Percentage to inflate grid prices. Default is 26.24.
         use_given_grid_prices (bool, optional): If True, use grid prices from the database. Default is True.
         producer_energy_price (float, optional): Fixed producer energy price if not using database prices. Default is 0.1665.
         *args: Additional positional arguments.
