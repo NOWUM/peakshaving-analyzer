@@ -255,7 +255,7 @@ def _retrieve_system_costs(data: dict[str], esm: fn.EnergySystemModel) -> None:
     data["grid_energy_costs_eur"] = _get_val_from_summary(
         esm=esm,
         model_name="TransmissionModel",
-        index=("capacity_price", "operation", "[kWh*h]", "grid"),
+        index=("capacity_price", "opexOp", "[Euro/a]", "grid"),
         location="consumption_site",
     )
     data["grid_capacity_costs_eur"] = (

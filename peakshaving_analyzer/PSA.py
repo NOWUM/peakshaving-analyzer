@@ -137,6 +137,7 @@ class PeakShavingAnalyzer:
                 commodity="energy",
                 hasCapacityVariable=True,
                 investPerCapacity=self.grid_capacity_price,
+                opexPerOperation=self.grid_energy_price,
                 interestRate=self.interest_rate,
                 economicLifetime=1,
                 technicalLifetime=1,
