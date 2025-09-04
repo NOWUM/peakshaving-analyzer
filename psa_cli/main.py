@@ -2,6 +2,7 @@
 # PYTHON_ARGCOMPLETE_OK
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
@@ -19,12 +20,19 @@ def cli():
         default=None,
         help="Path to save resulting timeseries to (not saving if not provided)",
     )
+    parser.add_argument("-v", "--verbose", help="Whether to print progress or not", action="store_true")
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     from peakshaving_analyzer.input import load_yaml_config
     from peakshaving_analyzer.PSA import PeakShavingAnalyzer
+
+    if args.verbose:
+        level = logging.INFO
+    else:
+        level = logging.ERROR
+    logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=level, datefmt="%Y-%m-%d %H:%M:%S")
 
     # Load config
     config_path = Path(args.config)

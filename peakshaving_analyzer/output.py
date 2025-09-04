@@ -140,7 +140,6 @@ def _get_optimum_ts(esm: fn.EnergySystemModel, model_name: str, variable: str, i
 
         s = vals_df.loc[index]
     except Exception as e:
-        print(model_name, variable, index)
         raise e
 
     return s
