@@ -130,8 +130,36 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
 
 
 def load_oeds_config(
-    con: str | sqlalchemy.engine.Connection, profile_id: int, producer_energy_price: float = 0.1665, *args, **kwargs
+    con: str | sqlalchemy.engine.Connection,
+    profile_id: int,
+    price_inflation_percent: float = 0,
+    use_given_grid_prices: bool = True,
+    producer_energy_price: float = 0.1665,
+    *args,
+    **kwargs,
 ) -> Config:
+    """
+    Loads a configuration for the Peak Shaving Analyzer from an OEDS (OpenEnergyDataServer).
+
+    This function retrieves consumption and price time series for a given profile ID from the OEDS,
+    applies optional price inflation, and constructs a Config object for optimization.
+
+    Args:
+        con (str or sqlalchemy.engine.Connection): Database connection string or SQLAlchemy connection object.
+        profile_id (int): The profile ID to load from the database.
+        price_inflation_percent (float, optional): Percentage to inflate grid prices. Default is 0.
+        use_given_grid_prices (bool, optional): If True, use grid prices from the database. Default is True.
+        producer_energy_price (float, optional): Fixed producer energy price if not using database prices. Default is 0.1665.
+        *args: Additional positional arguments.
+        **kwargs: Additional keyword arguments to override or supplement configuration.
+
+    Returns:
+        Config: A configuration object populated with time series and parameters from the database.
+
+    Raises:
+        ValueError: If required data cannot be loaded from the database.
+    """
+
     data = {}
 
     data.update(kwargs)
@@ -165,25 +193,28 @@ def load_oeds_config(
 
     data["price_timeseries"] = _read_or_create_price_timeseries(data)
 
-    # get capacity_price
-    data["grid_capacity_price"] = pd.read_sql(
-        sql=f"""
-        SELECT capacity_price_{sql_flh_text}_2500h_eur_per_kw
-        FROM vea_industrial_load_profiles.master
-        WHERE id = {profile_id}
-        """,
-        con=con,
-    )[f"capacity_price_{sql_flh_text}_2500h_eur_per_kw"].values[0]
+    if use_given_grid_prices:
+        # get capacity_price
+        original_cap_price = pd.read_sql(
+            sql=f"""
+            SELECT capacity_price_{sql_flh_text}_2500h_eur_per_kw
+            FROM vea_industrial_load_profiles.master
+            WHERE id = {profile_id}
+            """,
+            con=con,
+        )[f"capacity_price_{sql_flh_text}_2500h_eur_per_kw"].values[0]
+        data["grid_capacity_price"] = original_cap_price * (1 + price_inflation_percent / 100)
 
-    # get energy_price
-    data["grid_energy_price"] = pd.read_sql(
-        sql=f"""
-        SELECT energy_price_{sql_flh_text}_2500h_eur_per_kwh
-        FROM vea_industrial_load_profiles.master
-        WHERE id = {profile_id}
-        """,
-        con=con,
-    )[f"energy_price_{sql_flh_text}_2500h_eur_per_kwh"].values[0]
+        # get energy_price
+        original_energy_price = pd.read_sql(
+            sql=f"""
+            SELECT energy_price_{sql_flh_text}_2500h_eur_per_kwh
+            FROM vea_industrial_load_profiles.master
+            WHERE id = {profile_id}
+            """,
+            con=con,
+        )[f"energy_price_{sql_flh_text}_2500h_eur_per_kwh"].values[0]
+        data["grid_energy_price"] = original_energy_price * (1 + price_inflation_percent / 100)
 
     _remove_unused_keys(data)
 
