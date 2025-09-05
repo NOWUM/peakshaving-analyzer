@@ -169,6 +169,7 @@ def load_oeds_config(
         data["name"] = "profile_" + str(profile_id)
     data["hours_per_timestep"] = 0.25
     data["producer_energy_price"] = producer_energy_price
+    log.info("Set fixed values")
 
     # load consumption timeseries
     data["consumption_timeseries"] = pd.read_sql(
@@ -182,7 +183,7 @@ def load_oeds_config(
     )["value"]
 
     # calculate if consumption is over 2500h full load hours
-    is_over_2500h = data["consumption_timeseries"].sum() / 4 / data["consumption_timeseries"].max() > 2500
+    is_over_2500h = (data["consumption_timeseries"].sum() / 4) / data["consumption_timeseries"].max() > 2500
 
     if is_over_2500h:
         sql_flh_text = "under"
@@ -204,6 +205,7 @@ def load_oeds_config(
             con=con,
         )[f"capacity_price_{sql_flh_text}_2500h_eur_per_kw"].values[0]
         data["grid_capacity_price"] = original_cap_price * (1 + price_inflation_percent / 100)
+        log.info(f"Retrieved grid_capacity_price and updated with an inflation of {price_inflation_percent}%")
 
         # get energy_price
         original_energy_price = pd.read_sql(
@@ -214,7 +216,9 @@ def load_oeds_config(
             """,
             con=con,
         )[f"energy_price_{sql_flh_text}_2500h_eur_per_kwh"].values[0]
+        log.info("")
         data["grid_energy_price"] = original_energy_price * (1 + price_inflation_percent / 100)
+        log.info(f"Retrieved grid_energy_price and updated with an inflation of {price_inflation_percent}%")
 
     _remove_unused_keys(data)
 
