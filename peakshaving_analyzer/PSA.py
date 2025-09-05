@@ -151,7 +151,7 @@ class PeakShavingAnalyzer:
                 name="PV",
                 commodity="energy",
                 hasCapacityVariable=True,
-                operationRateMax=self.solar_generation_timeseries,
+                operationRateFix=self.solar_generation_timeseries,
                 capacityMax=self.max_pv_system_size_kwp,
                 investPerCapacity=self.pv_system_cost_per_kwp,
                 interestRate=self.interest_rate,
