@@ -2,6 +2,7 @@ import calendar
 import logging
 from dataclasses import dataclass
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
@@ -105,7 +106,7 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
     log.info("Timeseries metadata created")
 
     # read or create price timeseries
-    data["price_timeseries"] = _read_or_create_price_timeseries(data)
+    _read_or_create_price_timeseries(data)
     log.info("Price timeseries loaded or created")
 
     if data["add_solar"]:
@@ -115,7 +116,7 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
             ]
             log.info("Solar generation timeseries loaded")
         elif data["postal_code"]:
-            data["solar_generation_timeseries"] = _fetch_solar_timeseries(data)
+            _fetch_solar_timeseries(data)
             log.info("Solar generation timeseries retrieved from brightsky")
         else:
             msg = "No solar generation timeseries available."
@@ -195,28 +196,11 @@ def load_oeds_config(
     )
     log.info("Created timeseries metadata")
 
-    data["price_timeseries"] = _read_or_create_price_timeseries(data)
+    # read or create price timeseries
+    _read_or_create_price_timeseries(data)
 
-    # if we want to add solar / PV...
-    if data.get("add_solar"):
-        # and we have a given timeseries for generation
-        if data.get("solar_generation_timeseries"):
-            # we dont need to do anything
-            pass
-
-        # if we have a given postal code
-        elif data.get("postal_code"):
-            # fetch the generation timeseries for this
-            data["solar_generation_timeseries"] = _fetch_solar_timeseries(data)
-
-        # if we dont have a given postal code
-        elif not data.get("postal_code"):
-            # get a random zip code that is possible for this profile ID
-            data["postal_code"] = _get_random_zip_code(profile_id, con)
-            log.info("Generated random postal code corresponding to given zip code start in OEDS")
-
-        # and then add solar generation timeseries to data
-        data["solar_generation_timeseries"] = _fetch_solar_timeseries(data)
+    # retrieve solar generation timeseries
+    _fetch_solar_timeseries(data)
 
     # calculate if consumption is over 2500h full load hours
     is_over_2500h = (data["consumption_timeseries"].sum() / 4) / data["consumption_timeseries"].max() > 2500
@@ -321,17 +305,17 @@ def _read_or_create_price_timeseries(data):
 
         # ... or create a timeseries from a fixed price
         else:
-            return _create_price_timeseries(data)
+            data["price_timeseries"] = _create_price_timeseries(data)
 
     # if the filepath is given, we either ...
     else:
         # we overwrite the timeseries by given fixed price
         if data.get("overwrite_price_timeseries"):
-            return _create_price_timeseries(data)
+            data["price_timeseries"] = _create_price_timeseries(data)
 
         # or just read in the series from file
         else:
-            return _read_price_timeseries(data)
+            data["price_timeseries"] = _read_price_timeseries(data)
 
 
 def _create_price_timeseries(data):
@@ -390,18 +374,6 @@ def _read_price_timeseries(data):
     return df[["consumption_site", "grid"]]
 
 
-def _get_random_zip_code(profile_id: int, con: str | sqlalchemy.engine.Connection):
-    zip_code_start = pd.read_sql(
-        f"SELECT zip_code FROM vea_industrial_load_profiles.master WHERE id = {profile_id}", con
-    )["zip_code"].values[0]
-    zip_code_start = str(zip_code_start)
-
-    all_zip_codes = pgeocode.Nominatim("de")._index_postal_codes()
-    zip_code_range = all_zip_codes[all_zip_codes["postal_code"].str.startswith(zip_code_start)]
-
-    return zip_code_range["postal_code"].sample(1).values[0]
-
-
 def _fetch_solar_timeseries(data):
     """
     Read the solar timeseries from brightsky.
@@ -409,6 +381,26 @@ def _fetch_solar_timeseries(data):
     Returns:
         pd.Series: The solar timeseries.
     """
+
+    # if we want to add solar / PV...
+    if data.get("add_solar"):
+        # and we have a given timeseries for generation
+        if data.get("solar_generation_timeseries"):
+            # we dont need to do anything
+            pass
+
+        # if we have a given postal code
+        elif data.get("postal_code"):
+            # fetch the generation timeseries for this from brightsky
+            data["solar_generation_timeseries"] = _fetch_solar_from_brighsky(data)
+
+        # if we dont have a given postal code
+        elif not data.get("postal_code"):
+            # get default solar generation timeseries for germany
+            data["solar_generation_timeseries"] = _fetch_solar_default(data)
+
+
+def _fetch_solar_from_brighsky(data):
     log.info("Fetching solar timeseries from BrightSky API.")
     # convert postal code to coordinates
     nomi = pgeocode.Nominatim("de")
@@ -445,6 +437,32 @@ def _fetch_solar_timeseries(data):
     # convert from kWh/m2 to kW
     # kWh/m2/h = kW/m2 = 1000W/m2
     # no converseion necessary, as solar modules are tested with 1000W/m2
+
+    return df
+
+
+def _fetch_solar_default(data):
+    url = "https://www.renewables.ninja/country_downloads/DE/ninja-pv-country-DE-national-merra2.csv"
+    response = requests.get(url)
+    df = pd.read_csv(BytesIO(response.content), delimiter=",", header=3)
+
+    df["time"] = pd.to_datetime(df["time"])
+    df = df[df["time"].dt.year == data["assumed_year"]].reset_index(drop=True)
+
+    df.drop(columns="time", inplace=True)
+    df.rename(columns={"NATIONAL": "consumption_site"}, inplace=True)
+    df["grid"] = 0
+
+    df.fillna(0, inplace=True)
+
+    # resample to match hours per timestep
+    if data["hours_per_timestep"] != 1:
+        df = _resample_dataframe(
+            df,
+            hours_per_timestep=data["hours_per_timestep"],
+            assumed_year=data["assumed_year"],
+            n_timesteps=data["n_timesteps"],
+        )
 
     return df
 
