@@ -8,4 +8,4 @@ PeakShaverAnalyzer package initialization.
 """
 
 __all__ = ["PeakShavingAnalyzer", "Config", "Results", "load_yaml_config", "load_oeds_config"]
-__version__ = "0.1.5"
+__version__ = "0.1.6"
