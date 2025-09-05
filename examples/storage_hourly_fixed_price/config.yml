@@ -20,7 +20,7 @@ verbose: True   # Wether to print optimization progress or not
 # can be set to None if timestamps are not provided, we will then assume timestamps based on pattern
 timestamp_column:
 
-consumption_file_path: ./examples/storage_hourly_fixed_price/consumption.csv   # file path where consumption is stored as .csv
+consumption_file_path: consumption.csv   # file path where consumption is stored as .csv
 consumption_value_column: consumption                       # name of the column where consumption is provided
 
 price_file_path:       # file path where prices are stored as .csv
