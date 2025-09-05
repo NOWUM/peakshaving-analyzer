@@ -25,6 +25,7 @@ class Config(IOHandler):
     auto_opt: bool = False
     solver: str | None = "appsi_highs"
     verbose: bool = False
+    postal_code: int | str | None = None
 
     # timeseries
     consumption_timeseries: pd.Series | None = None
@@ -183,7 +184,15 @@ def load_oeds_config(
     )["value"]
     log.info("Loaded consumption timeseries from OEDS")
 
-    _create_timeseries_metadata(data)
+    data["n_timesteps"] = len(data["consumption_timeseries"])
+    data["leap_year"] = True
+    data["assumed_year"] = 2016
+    data["timestamps"] = pd.date_range(
+        start="2016-01-01",
+        periods=data["n_timesteps"],
+        freq="0.25h",
+        tz="UTC",
+    )
     log.info("Created timeseries metadata")
 
     data["price_timeseries"] = _read_or_create_price_timeseries(data)
@@ -203,8 +212,11 @@ def load_oeds_config(
         # if we dont have a given postal code
         elif not data.get("postal_code"):
             # get a random zip code that is possible for this profile ID
-            data["postal_code"] = _get_random_zip_code(profile_id)
+            data["postal_code"] = _get_random_zip_code(profile_id, con)
             log.info("Generated random postal code corresponding to given zip code start in OEDS")
+
+        # and then add solar generation timeseries to data
+        data["solar_generation_timeseries"] = _fetch_solar_timeseries(data)
 
     # calculate if consumption is over 2500h full load hours
     is_over_2500h = (data["consumption_timeseries"].sum() / 4) / data["consumption_timeseries"].max() > 2500
@@ -382,6 +394,7 @@ def _get_random_zip_code(profile_id: int, con: str | sqlalchemy.engine.Connectio
     zip_code_start = pd.read_sql(
         f"SELECT zip_code FROM vea_industrial_load_profiles.master WHERE id = {profile_id}", con
     )["zip_code"].values[0]
+    zip_code_start = str(zip_code_start)
 
     all_zip_codes = pgeocode.Nominatim("de")._index_postal_codes()
     zip_code_range = all_zip_codes[all_zip_codes["postal_code"].str.startswith(zip_code_start)]
@@ -422,7 +435,12 @@ def _fetch_solar_timeseries(data):
 
     # resample to match hours per timestep
     if data["hours_per_timestep"] != 1:
-        df = _resample_dataframe(df)
+        df = _resample_dataframe(
+            df,
+            hours_per_timestep=data["hours_per_timestep"],
+            assumed_year=data["assumed_year"],
+            n_timesteps=data["n_timesteps"],
+        )
 
     # convert from kWh/m2 to kW
     # kWh/m2/h = kW/m2 = 1000W/m2
@@ -515,7 +533,6 @@ def _remove_unused_keys(data):
         "price_value_column",
         "solar_file_path",
         "solar_value_column",
-        "postal_code",
         "leap_year",
         "assumed_year",
         "config_dir",
