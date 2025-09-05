@@ -26,7 +26,7 @@ class PeakShavingAnalyzer:
         self.auto_opt = config.auto_opt
         self.verbose = config.verbose
 
-        self.interest_rate = config.interest_rate
+        self.interest_rate = config.interest_rate / 100
 
         self.grid_capacity_price = config.grid_capacity_price
         self.grid_energy_price = config.grid_energy_price
