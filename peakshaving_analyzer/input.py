@@ -181,6 +181,30 @@ def load_oeds_config(
         """,
         con=con,
     )["value"]
+    log.info("Loaded consumption timeseries from OEDS")
+
+    _create_timeseries_metadata(data)
+    log.info("Created timeseries metadata")
+
+    data["price_timeseries"] = _read_or_create_price_timeseries(data)
+
+    # if we want to add solar / PV...
+    if data.get("add_solar"):
+        # and we have a given timeseries for generation
+        if data.get("solar_generation_timeseries"):
+            # we dont need to do anything
+            pass
+
+        # if we have a given postal code
+        elif data.get("postal_code"):
+            # fetch the generation timeseries for this
+            data["solar_generation_timeseries"] = _fetch_solar_timeseries(data)
+
+        # if we dont have a given postal code
+        elif not data.get("postal_code"):
+            # get a random zip code that is possible for this profile ID
+            data["postal_code"] = _get_random_zip_code(profile_id)
+            log.info("Generated random postal code corresponding to given zip code start in OEDS")
 
     # calculate if consumption is over 2500h full load hours
     is_over_2500h = (data["consumption_timeseries"].sum() / 4) / data["consumption_timeseries"].max() > 2500
@@ -189,10 +213,6 @@ def load_oeds_config(
         sql_flh_text = "under"
     else:
         sql_flh_text = "over"
-
-    _create_timeseries_metadata(data)
-
-    data["price_timeseries"] = _read_or_create_price_timeseries(data)
 
     if use_given_grid_prices:
         # get capacity_price
@@ -356,6 +376,17 @@ def _read_price_timeseries(data):
     log.info("Price timeseries successfully read and processed.")
 
     return df[["consumption_site", "grid"]]
+
+
+def _get_random_zip_code(profile_id: int, con: str | sqlalchemy.engine.Connection):
+    zip_code_start = pd.read_sql(
+        f"SELECT zip_code FROM vea_industrial_load_profiles.master WHERE id = {profile_id}", con
+    )["zip_code"].values[0]
+
+    all_zip_codes = pgeocode.Nominatim("de")._index_postal_codes()
+    zip_code_range = all_zip_codes[all_zip_codes["postal_code"].str.startswith(zip_code_start)]
+
+    return zip_code_range["postal_code"].sample(1).values[0]
 
 
 def _fetch_solar_timeseries(data):
