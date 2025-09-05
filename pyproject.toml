@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "peakshaving-analyzer"
-version = "0.1.4"
+version = "0.1.5"
 description = "Peak shaving analysis for industrial load profiles"
 authors = [
     { name = "Christoph Komanns", email = "c.komanns@gmail.com" },
