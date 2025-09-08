@@ -184,7 +184,7 @@ class PeakShavingAnalyzer:
                 commodity="stored_energy",
                 locationalEligibility=pd.Series([1, 0], index=["consumption_site", "grid"]),
                 hasCapacityVariable=True,
-                cyclicLifetime=10000,
+                cyclicLifetime=self.config.storage_cyclic_lifetime,
                 chargeEfficiency=self.storage_charge_efficiency,
                 dischargeEfficiency=self.storage_discharge_efficiency,
                 capacityMax=self.max_storage_size_kwh,

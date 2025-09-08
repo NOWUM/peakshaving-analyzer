@@ -103,3 +103,33 @@ def test_add_solar():
         + results.inverter_annuity_eur
         + results.storage_annuity_eur
     )
+
+
+def test_storage_only():
+    # 4 cheap hours, one expensive hour
+    # adding a storage of 1 kwh reduces cost here
+    config = Config(
+        "test_config",
+        consumption_timeseries=[1] * 6,
+        hours_per_timestep=1,
+        n_timesteps=6,
+        price_timeseries=pd.DataFrame({"grid": [0.3] * 4 + [1] + [0.3], "consumption_site": [0] * 6}),
+        storage_charge_rate=10,
+        storage_discharge_rate=10,
+        # cyclic lifetime must be increased, otherwise we are building much more storage
+        storage_cyclic_lifetime=1e5,
+        interest_rate=2,
+        storage_charge_efficiency=1,
+        storage_discharge_efficiency=1,
+    )
+    psa = PeakShavingAnalyzer(config=config)
+    results = psa.optimize()
+    ts = results.timeseries_to_df()
+    # we need to charge in the first few hours
+    assert (ts["grid_usage_kw"][0:4] >= 1).all()
+    # but do not charge in the last hour
+    assert (ts["grid_usage_kw"][4] == 0).all()
+
+    assert results.inverter_capacity_kw == 1
+    results.storage_capacity_kwh
+    assert results.storage_capacity_kwh == 1
