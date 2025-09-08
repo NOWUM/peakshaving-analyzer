@@ -51,6 +51,7 @@ class Config(IOHandler):
     storage_charge_efficiency: float = 0.95
     storage_discharge_efficiency: float = 0.95
     storage_charge_rate: float = 5
+    storage_cyclic_lifetime: float = 10000
     storage_discharge_rate: float = 5
     inverter_efficiency: float = 0.95
     max_pv_system_size_kwp: float | None = None
