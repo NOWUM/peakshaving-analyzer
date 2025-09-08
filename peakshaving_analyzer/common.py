@@ -24,7 +24,7 @@ class IOHandler:
             return {
                 k: v
                 for k, v in asdict(self).items()
-                if not isinstance(v, (pd.Series | pd.DataFrame | pd.DatetimeIndex))
+                if not isinstance(v, (pd.Series | pd.DataFrame | pd.DatetimeIndex | list))
             }
 
     def to_json(self, path: str | Path):

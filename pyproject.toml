@@ -46,6 +46,7 @@ dependencies = [
 dev = [
     "ruff >=0.11.5",
     "build >=1.2.2",
+    "pytest >=8.4.2",
 ]
 
 [project.scripts]
