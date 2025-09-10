@@ -52,8 +52,13 @@ class Results(IOHandler):
     total_annuity_eur: float | None = None
     total_invest_eur: float | None = None
 
+    # timestamps
+    timestamps: list | None = None
+
     def timeseries_to_df(self):
         df = pd.DataFrame()
+
+        df["timestamp"] = self.timestamps
 
         df["grid_usage_kw"] = self.grid_usage_kw
         df["storage_charge_kw"] = self.storage_charge_kw
@@ -101,6 +106,7 @@ class Results(IOHandler):
 def create_results(config: Config, esm: fn.EnergySystemModel) -> Results:
     data = {}
     data["name"] = config.name
+    data["timestamps"] = config.timestamps
 
     _retrieve_timeseries(data, esm=esm, config=config)
     log.info("Retrieved timeseries")
