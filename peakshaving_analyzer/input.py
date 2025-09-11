@@ -24,7 +24,7 @@ class Config(IOHandler):
     add_storage: bool = True
     add_solar: bool = False
     auto_opt: bool = False
-    solver: str | None = "appsi_highs"
+    solver: str = "appsi_highs"
     verbose: bool = False
     postal_code: int | str | None = None
 
@@ -309,14 +309,12 @@ def _read_or_create_price_timeseries(data):
             data["price_timeseries"] = _create_price_timeseries(data)
 
     # if the filepath is given, we either ...
-    else:
+    elif data.get("overwrite_price_timeseries"):
         # we overwrite the timeseries by given fixed price
-        if data.get("overwrite_price_timeseries"):
-            data["price_timeseries"] = _create_price_timeseries(data)
-
+        data["price_timeseries"] = _create_price_timeseries(data)
+    else:
         # or just read in the series from file
-        else:
-            data["price_timeseries"] = _read_price_timeseries(data)
+        data["price_timeseries"] = _read_price_timeseries(data)
 
 
 def _create_price_timeseries(data):
