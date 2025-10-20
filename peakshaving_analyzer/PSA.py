@@ -157,6 +157,10 @@ class PeakShavingAnalyzer:
             )
         )
 
+        if self.config.max_storage_size_kwh:
+            max_cap = pd.Series([self.config.max_storage_size_kwh, 0], index=["consumption_site", "grid"])
+        else:
+            max_cap = None
         self.esm.add(
             fn.Storage(
                 esM=self.esm,
@@ -167,7 +171,7 @@ class PeakShavingAnalyzer:
                 cyclicLifetime=self.config.storage_cyclic_lifetime,
                 chargeEfficiency=self.config.storage_charge_efficiency,
                 dischargeEfficiency=self.config.storage_discharge_efficiency,
-                capacityMax=self.config.max_storage_size_kwh,
+                capacityMax=max_cap,
                 economicLifetime=self.config.storage_lifetime,
                 technicalLifetime=self.config.storage_lifetime,
                 chargeRate=self.config.storage_charge_rate,
