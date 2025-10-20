@@ -48,7 +48,12 @@ class Config(IOHandler):
     inverter_cost_per_kw: float = 180
     inverter_lifetime: int = 15
 
-    # PV system parameters
+    # Existing PV system parameters
+    pv_system_already_exists: bool = False
+    existing_pv_size_kwp: float | None = None
+    existing_pv_timeseries: pd.Series | None = None
+
+    # New PV system parameters
     pv_system_lifetime: int = 30
     pv_system_cost_per_kwp: float = 1200.0
     max_pv_system_size_kwp: float | None = None
