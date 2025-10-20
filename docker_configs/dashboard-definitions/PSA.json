@@ -300,7 +300,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  timestamp,\n  grid_usage_kw AS \"Grid\",\n  storage_discharge_kw AS \"Storage discharge\",\n  solar_generation_kw AS \"Solar generation\",\n  consumption_kw AS \"Load\"\nFROM output.timeseries WHERE name = '$opti_name'",
+          "rawSql": "SELECT\n  timestamp,\n  grid_usage_kw AS \"Grid\",\n  storage_discharge_kw AS \"Storage discharge\",\n  pv_generation_kw AS \"pv generation\",\n  consumption_kw AS \"Load\"\nFROM output.timeseries WHERE name = '$opti_name'",
           "refId": "A",
           "sql": {
             "columns": [
@@ -392,7 +392,7 @@
               "options": {
                 "mode": "exclude",
                 "names": [
-                  "Solar generation"
+                  "pv generation"
                 ],
                 "prefix": "All except:",
                 "readOnly": true
@@ -437,7 +437,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  timestamp,\n  solar_generation_kw AS \"Solar generation\"\nFROM output.timeseries WHERE name = '$opti_name'",
+          "rawSql": "SELECT\n  timestamp,\n  pv_generation_kw AS \"pv generation\"\nFROM output.timeseries WHERE name = '$opti_name'",
           "refId": "A",
           "sql": {
             "columns": [
@@ -826,7 +826,7 @@
               "editorMode": "code",
               "format": "table",
               "rawQuery": true,
-              "rawSql": "SELECT \n  solar_invest_eur AS \"Solar investment\"\nFROM output.overview\nWHERE name = '$opti_name'",
+              "rawSql": "SELECT \n  pv_invest_eur AS \"pv investment\"\nFROM output.overview\nWHERE name = '$opti_name'",
               "refId": "A",
               "sql": {
                 "columns": [
@@ -911,7 +911,7 @@
               "editorMode": "code",
               "format": "table",
               "rawQuery": true,
-              "rawSql": "SELECT \n  solar_capacity_kwp AS \"PV system size\"\nFROM output.overview\nWHERE name = '$opti_name'",
+              "rawSql": "SELECT \n  pv_capacity_kwp AS \"PV system size\"\nFROM output.overview\nWHERE name = '$opti_name'",
               "refId": "A",
               "sql": {
                 "columns": [

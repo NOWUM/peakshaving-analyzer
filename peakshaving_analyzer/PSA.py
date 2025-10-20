@@ -21,8 +21,8 @@ class PeakShavingAnalyzer:
         self.price_timeseries = config.price_timeseries
         self.verbose = config.verbose
 
-        if self.config.add_solar:
-            self.solar_generation_timeseries = config.solar_generation_timeseries
+        if self.config.add_pv:
+            self.pv_generation_timeseries = config.pv_generation_timeseries
 
         if config.verbose:
             log.setLevel(level=logging.INFO)
@@ -39,9 +39,9 @@ class PeakShavingAnalyzer:
             self.add_storage()
             log.info("Added storage.")
 
-        if self.config.add_solar:
-            self.add_solar()
-            log.info("Added solar.")
+        if self.config.add_pv:
+            self.add_pv()
+            log.info("Added pv.")
 
     def _create_esm(self):
         self.esm = fn.EnergySystemModel(
@@ -108,14 +108,14 @@ class PeakShavingAnalyzer:
             )
         )
 
-    def add_solar(self):
+    def add_pv(self):
         self.esm.add(
             fn.Source(
                 esM=self.esm,
                 name="PV",
                 commodity="energy",
                 hasCapacityVariable=True,
-                operationRateFix=self.config.solar_generation_timeseries,
+                operationRateFix=self.config.pv_generation_timeseries,
                 capacityMax=self.config.max_pv_system_size_kwp,
                 investPerCapacity=self.config.pv_system_cost_per_kwp,
                 interestRate=self.config.interest_rate / 100,

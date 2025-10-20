@@ -148,7 +148,7 @@ results_dataframe = results.to_dataframe()
 
 **4. Plot the resulting timeseries:**
 
-The resulting timeseries (storage charging / discharging, state of charge, solar generation, grid usage, ...) can be easily plotted:
+The resulting timeseries (storage charging / discharging, state of charge, PV generation, grid usage, ...) can be easily plotted:
 
 ```python
 results = psa.optimize()

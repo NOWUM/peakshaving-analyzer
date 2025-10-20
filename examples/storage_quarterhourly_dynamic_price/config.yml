@@ -6,7 +6,7 @@ name: storage_quarterhourly_dyn_price    # name of the optimization
 hours_per_timestep: 0.25    # in 15-minute timesteps
 
 add_storage: True   # wether to add storage to optimization or not
-add_solar: False    # wether to add pv system to optimization or not
+add_pv: False    # wether to add pv system to optimization or not
 
 auto_opt: False    # Wether to automatically start optizmization or not
 solver: "gurobi"
@@ -26,11 +26,11 @@ consumption_value_column: consumption                       # name of the column
 price_file_path: .price.csv      # file path where prices are stored as .csv
 price_value_column: price                           # name of the column where prices are provided
 
-postal_code:    # postal code for automtic solar generation calculation, leave empty for own timeseries
-  # if not provided, solar generation will be calculated with the following parameters
-  # value column needs to contain values from 0 (no solar generation) to 1 (max solar generation)
-price_file_path: # file path where solar generation is stored as .csv
-price_value_column:                                   # name of the column where solar generation is provided
+postal_code:    # postal code for automtic pv generation calculation, leave empty for own timeseries
+  # if not provided, pv generation will be calculated with the following parameters
+  # value column needs to contain values from 0 (no pv generation) to 1 (max pv generation)
+price_file_path: # file path where pv generation is stored as .csv
+price_value_column:                                   # name of the column where pv generation is provided
 
 
 #######################
