@@ -33,29 +33,33 @@ class Config(IOHandler):
     price_timeseries: pd.Series | None = None
     pv_generation_timeseries: pd.Series | None = None
 
-    # economic parameters
-    overwrite_price_timeseries: bool = False
-    producer_energy_price: float = 0.1665
-    grid_capacity_price: float = 101.22
-    grid_energy_price: float = 0.046
-    pv_system_lifetime: int = 30
-    pv_system_cost_per_kwp: float = 1200.0
-    inverter_lifetime: int = 15
-    inverter_cost_per_kw: float = 180
+    # storage system (battery) parameters
     storage_lifetime: int = 15
     storage_cost_per_kwh: float = 285
-    interest_rate: float = 2
-
-    # technical parameters
-    max_storage_size_kwh: float | None = None
     storage_charge_efficiency: float = 0.95
     storage_discharge_efficiency: float = 0.95
     storage_charge_rate: float = 5
     storage_cyclic_lifetime: float = 10000
     storage_discharge_rate: float = 5
+    max_storage_size_kwh: float | None = None
+
+    # storage system (inverter) parameters
     inverter_efficiency: float = 0.95
+    inverter_cost_per_kw: float = 180
+    inverter_lifetime: int = 15
+
+    # PV system parameters
+    pv_system_lifetime: int = 30
+    pv_system_cost_per_kwp: float = 1200.0
     max_pv_system_size_kwp: float | None = None
     pv_system_kwp_per_m2: float = 0.4
+
+    # economic parameters
+    overwrite_price_timeseries: bool = False
+    producer_energy_price: float = 0.1665
+    grid_capacity_price: float = 101.22
+    grid_energy_price: float = 0.046
+    interest_rate: float = 2
 
     # metadata needed for optimization (set by peakshaving analyzer)
     timestamps: pd.DatetimeIndex | None = None

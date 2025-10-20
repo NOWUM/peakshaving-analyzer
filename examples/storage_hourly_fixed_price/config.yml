@@ -32,6 +32,60 @@ postal_code:    # postal code for automtic pv generation calculation, leave empt
 pv_file_path: # file path where pv generation is stored as .csv
 pv_value_column:                                   # name of the column where pv generation is provided
 
+################################
+# storage (battery) parameters #
+################################
+storage_lifetime: 15    # storage lifetime in years
+# taken from:
+# "Energiespeicher - Bedarf, Technologien, Integration", Stadler Sterner 2017
+
+storage_cost_per_kwh: 145   # storage capacity cost in euro per kwh capacity
+# taken from:
+# https://www.pem.rwth-aachen.de/cms/pem/der-lehrstuhl/presse-medien/aktuelle-meldungen/~bexlow/battery-monitor-2023-nachfrage-waechst/
+
+max_storage_size_kwh:     # maximum available storage size in kWh (leave empty for infinite size)
+
+storage_charge_efficiency: 0.9      # efficiency for charging storage
+storage_discharge_efficiency: 0.9   # efficiency for discharging storage
+# for round trip efficiency of 0.81
+# taken from:
+# https://www.sciencedirect.com/science/article/pii/S2352152X23027846
+
+storage_charge_rate: 1      #
+storage_discharge_rate: 1   #
+# taken from:
+# https://www.sciencedirect.com/science/article/pii/S2590116819300116
+
+#################################
+# storage (inverter) parameters #
+#################################
+inverter_efficiency: 0.95   # efficiency of the storage inverter
+# taken from:
+# https://www.sciencedirect.com/science/article/pii/S1364032116306712
+
+inverter_lifetime: 15   # storage inverter lifetime in years
+# taken from:
+# 10.4229/WCPEC-82022-3DV.1.46 Bucher Joss
+
+inverter_cost_per_kw: 180   # storage inverter cost in euro per kw
+# taken from:
+# https://www.sciencedirect.com/science/article/pii/S1876610216310736
+
+
+########################
+# PV system parameters #
+########################
+pv_system_lifetime: 30    # pv system lifetime in years
+# taken from:
+# https://www.mdpi.com/1996-1073/14/14/4278
+
+pv_system_cost_per_kwp: 1250    # pv system cost in euro per kWpeak
+# taken from:
+# https://www.ise.fraunhofer.de/de/veroeffentlichungen/studien/studie-stromgestehungskosten-erneuerbare-energien.html
+
+pv_system_kwp_per_m2: 0.4   # energy obtainable per area in kWpeak per m²
+max_pv_system_size_kwp:   # maximum available pv system size in kWpeak (leave empty for infinite size)
+
 #######################
 # economic parameters #
 #######################
@@ -46,51 +100,4 @@ grid_energy_price: 0.0460     # energy price in euro per kwh to be paid per kwh 
 # mean updated with historical inflation of cumulative 26.24% from:
 # https://zenodo.org/records/13734730
 
-pv_system_lifetime: 30    # pv system lifetime in years
-# taken from:
-# https://www.mdpi.com/1996-1073/14/14/4278
-
-pv_system_cost_per_kwp: 1250    # pv system cost in euro per kWpeak
-# taken from:
-# https://www.ise.fraunhofer.de/de/veroeffentlichungen/studien/studie-stromgestehungskosten-erneuerbare-energien.html
-
-inverter_lifetime: 15   # storage inverter lifetime in years
-# taken from:
-# 10.4229/WCPEC-82022-3DV.1.46 Bucher Joss
-
-inverter_cost_per_kw: 180   # storage inverter cost in euro per kw
-# taken from:
-# https://www.sciencedirect.com/science/article/pii/S1876610216310736
-
-storage_lifetime: 15    # storage lifetime in years
-# taken from:
-# "Energiespeicher - Bedarf, Technologien, Integration", Stadler Sterner 2017
-
-storage_cost_per_kwh: 145   # storage capacity cost in euro per kwh capacity
-# taken from:
-# https://www.pem.rwth-aachen.de/cms/pem/der-lehrstuhl/presse-medien/aktuelle-meldungen/~bexlow/battery-monitor-2023-nachfrage-waechst/
-
 interest_rate: 3    # interes rate in %
-
-########################
-# technical parameters #
-########################
-max_storage_size_kwh:     # maximum available storage size in kWh (leave empty for infinite size)
-max_pv_system_size_kwp:   # maximum available pv system size in kWpeak (leave empty for infinite size)
-
-storage_charge_efficiency: 0.9      # efficiency for charging storage
-storage_discharge_efficiency: 0.9   # efficiency for discharging storage
-# for round trip efficiency of 0.81
-# taken from:
-# https://www.sciencedirect.com/science/article/pii/S2352152X23027846
-
-storage_charge_rate: 1      #
-storage_discharge_rate: 1   #
-# taken from:
-# https://www.sciencedirect.com/science/article/pii/S2590116819300116
-
-inverter_efficiency: 0.95   # efficiency of the storage inverter
-# taken from:
-# https://www.sciencedirect.com/science/article/pii/S1364032116306712
-
-pv_system_kwp_per_m2: 0.4   # energy obtainable per area in kWpeak per m²
