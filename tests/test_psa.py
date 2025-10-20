@@ -133,3 +133,22 @@ def test_storage_only():
     assert results.inverter_capacity_kw == 1
     results.storage_capacity_kwh
     assert results.storage_capacity_kwh == 1
+
+
+def test_existing_pv():
+    config = Config(
+        "test_config",
+        consumption_timeseries=[1, 2, 1],
+        hours_per_timestep=1,
+        n_timesteps=3,
+        price_timeseries=pd.DataFrame({"grid": [10, 10, 10], "consumption_site": [0, 0, 0]}),
+        pv_system_already_exists=True,
+        existing_pv_size_kwp=1,
+        existing_pv_generation_timeseries=pd.DataFrame({"consumption_site": [1, 1, 1], "grid": [0, 0, 0]}),
+        allow_additional_pv=False,
+    )
+    psa = PeakShavingAnalyzer(config=config)
+    results = psa.optimize()
+    ts = results.timeseries_to_df()
+
+    assert (ts["existing_pv_generation_kw"] == [1, 1, 1]).all()
