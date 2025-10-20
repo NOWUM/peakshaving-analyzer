@@ -120,53 +120,8 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
     log.info("Price timeseries loaded or created")
 
     # check existing timeseries
-    if data["pv_system_already_exists"]:
-        # load from CSV if provided
-        if ["existing_pv_file_path"]:
-            data["existing_pv_generation_timeseries"] = pd.read_csv(data["config_dir"] / data["existing_pv_file_path"])[
-                data.get("existing_pv_value_column", "value")
-            ]
-            log.info("existing pv generation timeseries loaded")
-
-        # load by weather data combined with system size
-        elif data["postal_code"] and data["existing_pv_size_kwp"]:
-            pv_gen = _fetch_pv_from_brighsky(data)
-            pv_gen *= data["existing_pv_size_kwp"]
-            data["existing_pv_generation_timeseries"] = pv_gen.copy()
-
-        # fail and raise warning
-        else:
-            msg = "No PV generation timeseries for existing system available."
-            msg += " Setting pv_system_already_exists to False."
-            log.warning(msg)
-            data["pv_system_already_exists"] = False
-
-    # new PV
-    if data["allow_additional_pv"]:
-        # load from CSV if provided
-        if data["new_pv_file_path"]:
-            data["new_pv_generation_timeseries"] = pd.read_csv(data["config_dir"] / data["new_pv_file_path"])[
-                data.get("new_pv_value_column", "value")
-            ]
-            log.info("pv generation timeseries loaded")
-
-        # load by using existing timeseries
-        elif data["existing_pv_generation_timeseries"]:
-            pv_gen = data["existing_pv_generation_timeseries"].copy()  # use existing
-            pv_gen = pv_gen / pv_gen["consumption_site"].max()  # scale existing to 0 to 1
-
-        # load by postal code from brightsky
-        elif data["postal_code"]:
-            pv_gen = _fetch_pv_from_brighsky(data)
-            data["new_pv_generation_timeseries"] = pv_gen.copy()
-            log.info("pv generation timeseries retrieved from brightsky")
-
-        # fail and raise warning
-        else:
-            msg = "No pv generation timeseries available."
-            msg += " Setting allow_additional_pv to False."
-            log.warning(msg)
-            data["allow_additional_pv"] = False
+    _load_pv_timeseries(data)
+    log.info("PV generation timeseries loaded or created")
 
     _check_timeseries_length(data)
 
@@ -244,7 +199,7 @@ def load_oeds_config(
     _read_or_create_price_timeseries(data)
 
     # retrieve pv generation timeseries
-    _fetch_pv_timeseries(data)
+    _load_pv_timeseries(data)
 
     # calculate if consumption is over 2500h full load hours
     is_over_2500h = (data["consumption_timeseries"].sum() / 4) / data["consumption_timeseries"].max() > 2500
@@ -416,7 +371,7 @@ def _read_price_timeseries(data):
     return df[["consumption_site", "grid"]]
 
 
-def _fetch_pv_timeseries(data):
+def _load_pv_timeseries(data):
     """
     Read the pv timeseries from brightsky.
 
@@ -424,25 +379,62 @@ def _fetch_pv_timeseries(data):
         pd.Series: The pv timeseries.
     """
 
+    # existing PV systems
+    if data.get("pv_system_already_exists"):
+        # load from CSV if provided
+        if data.get("existing_pv_file_path"):
+            pv_gen = pd.read_csv(data["config_dir"] / data["existing_pv_file_path"])[
+                data.get("existing_pv_value_column", "value")
+            ]
+            pv_gen.rename("consumption_site", inplace=True)
+            data["existing_pv_size_kwp"] = pv_gen.max()  # set existing system size
+            pv_gen = pv_gen / pv_gen.max()  # scale to values from 0 to 1
+            log.info("existing pv generation timeseries loaded")
+
+        # load by weather data combined with system size
+        elif data.get("postal_code") and data.get("existing_pv_size_kwp"):
+            pv_gen = _fetch_pv_from_brighsky(data)
+
+        # fail and raise warning
+        else:
+            msg = "No PV generation timeseries for existing system available."
+            msg += " Setting pv_system_already_exists to False."
+            log.warning(msg)
+            data["pv_system_already_exists"] = False
+
+        existing_pv_gen_df = _pv_dataframe_from_series(pv_gen)
+        data["existing_pv_generation_timeseries"] = existing_pv_gen_df
+
     # if we want to add pv / PV...
     if data.get("allow_additional_pv"):
-        # and we have a given timeseries for generation
-        if data.get("new_pv_generation_timeseries"):
-            # we dont need to do anything
-            pass
+        # load from csv if provided
+        if data.get("new_pv_file_path"):
+            pv_gen = pd.read_csv(data["config_dir"] / data["new_pv_file_path"])[
+                data.get("new_pv_value_column", "value")
+            ]
+            pv_gen.rename("consumption_site", inplace=True)
+            log.info("existing pv generation timeseries loaded")
 
-        # if we have a given postal code
+        # use existing curve if given
+        elif data.get("existing_pv_generation_timeseries"):
+            print("here2")
+            pv_gen = data["existing_pv_generation_timeseries"]["consumption_site"].copy()
+
+        # use postal code if given
         elif data.get("postal_code"):
             # fetch the generation timeseries for this from brightsky
-            data["new_pv_generation_timeseries"] = _fetch_pv_from_brighsky(data)
+            pv_gen = _fetch_pv_from_brighsky(data)
 
-        # if we dont have a given postal code
+        # retrieve default for germany if nothing is provided
         elif not data.get("postal_code"):
             # get default pv generation timeseries for germany
-            data["new_pv_generation_timeseries"] = _fetch_pv_default(data)
+            pv_gen = _fetch_pv_default(data)
+
+        new_pv_gen_df = _pv_dataframe_from_series(pv_gen)
+        data["new_pv_generation_timeseries"] = new_pv_gen_df
 
 
-def _fetch_pv_from_brighsky(data):
+def _fetch_pv_from_brighsky(data) -> pd.Series:
     log.info("Fetching pv timeseries from BrightSky API.")
     # convert postal code to coordinates
     nomi = pgeocode.Nominatim("de")
@@ -463,9 +455,6 @@ def _fetch_pv_from_brighsky(data):
 
     # rename to location in ESM, add grid column with no operation possible
     df.rename(columns={"solar": "consumption_site"}, inplace=True)
-    df["grid"] = 0
-
-    df.fillna(0, inplace=True)
 
     # resample to match hours per timestep
     if data["hours_per_timestep"] != 1:
@@ -478,12 +467,12 @@ def _fetch_pv_from_brighsky(data):
 
     # convert from kWh/m2 to kW
     # kWh/m2/h = kW/m2 = 1000W/m2
-    # no converseion necessary, as pv modules are tested with 1000W/m2
+    # no conversion necessary, as pv modules are tested with 1000W/m2
 
-    return df
+    return df["consumption_site"]
 
 
-def _fetch_pv_default(data):
+def _fetch_pv_default(data) -> pd.Series:
     url = "https://www.renewables.ninja/country_downloads/DE/ninja-pv-country-DE-national-merra2.csv"
     response = requests.get(url)
     df = pd.read_csv(BytesIO(response.content), delimiter=",", header=3)
@@ -506,7 +495,7 @@ def _fetch_pv_default(data):
             n_timesteps=data["n_timesteps"],
         )
 
-    return df
+    return df["consumption_site"]
 
 
 def _resample_dataframe(df: pd.DataFrame, hours_per_timestep: float, assumed_year: int, n_timesteps: int):
@@ -557,6 +546,16 @@ def _resample_dataframe(df: pd.DataFrame, hours_per_timestep: float, assumed_yea
     return df
 
 
+def _pv_dataframe_from_series(s: pd.Series) -> pd.DataFrame:
+    df = pd.DataFrame(columns=["consumption_site", "grid"])
+    df["consumption_site"] = s.copy()
+    df["grid"] = 0
+
+    df.fillna(0, inplace=True)
+
+    return df
+
+
 def _check_timeseries_length(data):
     """
     Check if the length of the consumption and price timeseries matches the expected number of timesteps.
@@ -591,6 +590,8 @@ def _remove_unused_keys(data):
         "consumption_value_column",
         "price_file_path",
         "price_value_column",
+        "existing_pv_file_path",
+        "existing_pv_value_column",
         "new_pv_file_path",
         "new_pv_value_column",
         "leap_year",
