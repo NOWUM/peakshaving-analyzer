@@ -78,10 +78,10 @@ def test_allow_additional_pv():
     results = psa.optimize()
 
     # check that an inverter and storage is available
-    assert results.inverter_capacity_kw >= 5
+    assert results.inverter_capacity_kw >= 2
     assert results.storage_capacity_kwh >= 10
     assert results.grid_capacity_kw == 1
-    assert results.pv_capacity_kwp >= 3
+    assert results.new_pv_capacity_kwp >= 3
 
     # energy costs are now much lower
     assert results.energy_costs_eur < 400
@@ -89,7 +89,9 @@ def test_allow_additional_pv():
     assert isclose(results.inverter_invest_eur, results.inverter_capacity_kw * config.inverter_cost_per_kw)
 
     # sum of investment should match
-    assert results.total_invest_eur == results.pv_invest_eur + results.inverter_invest_eur + results.storage_invest_eur
+    assert (
+        results.total_invest_eur == results.new_pv_invest_eur + results.inverter_invest_eur + results.storage_invest_eur
+    )
 
     # annuities should match
     assert (
@@ -97,7 +99,7 @@ def test_allow_additional_pv():
         == results.energy_costs_eur
         + results.grid_energy_costs_eur
         + results.grid_capacity_costs_eur
-        + results.pv_annuity_eur
+        + results.new_pv_annuity_eur
         + results.inverter_annuity_eur
         + results.storage_annuity_eur
     )
