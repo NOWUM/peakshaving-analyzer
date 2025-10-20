@@ -72,7 +72,7 @@ pv_system_already_exists: False # Wether there is an existing PV system or not. 
 
 # generation timeseries for existing PV system.
 # If you don't have that, see below
-existing_pv_file_path: # File path, where PV generation from existing system is stored as .csv. Values should in kW
+existing_pv_file_path: # File path, where PV generation from existing system is stored as .csv. Values should be in kW
 existing_pv_column: # Name of the column where existing pv generation is provided.
 
 # If you don't have a timeseries for your current systems generation, you can provide the system size (in kWp) and your postal code,

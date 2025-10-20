@@ -81,7 +81,7 @@ class Config(IOHandler):
         return df
 
 
-def load_yaml_config(config_file_path: Path | str) -> Config:
+def load_yaml_config(config_file_path: Path | str, test_mode: bool = False) -> Config:
     config_path = Path(config_file_path)
 
     # read in configuration file
@@ -123,7 +123,8 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
     _load_pv_timeseries(data)
     log.info("PV generation timeseries loaded or created")
 
-    _check_timeseries_length(data)
+    if not test_mode:
+        _check_timeseries_length(data)
 
     _remove_unused_keys(data)
 
@@ -399,11 +400,13 @@ def _load_pv_timeseries(data):
         else:
             msg = "No PV generation timeseries for existing system available."
             msg += " Setting pv_system_already_exists to False."
+            pv_gen = None
             log.warning(msg)
             data["pv_system_already_exists"] = False
 
-        existing_pv_gen_df = _pv_dataframe_from_series(pv_gen)
-        data["existing_pv_generation_timeseries"] = existing_pv_gen_df
+        if pv_gen is not None:
+            existing_pv_gen_df = _pv_dataframe_from_series(pv_gen)
+            data["existing_pv_generation_timeseries"] = existing_pv_gen_df
 
     # if we want to add pv / PV...
     if data.get("allow_additional_pv"):
@@ -416,8 +419,7 @@ def _load_pv_timeseries(data):
             log.info("existing pv generation timeseries loaded")
 
         # use existing curve if given
-        elif data.get("existing_pv_generation_timeseries"):
-            print("here2")
+        elif data.get("existing_pv_generation_timeseries") is not None:
             pv_gen = data["existing_pv_generation_timeseries"]["consumption_site"].copy()
 
         # use postal code if given
