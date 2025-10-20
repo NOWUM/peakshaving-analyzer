@@ -60,7 +60,7 @@ def test_various_steps(n_timesteps):
 PV_PROFILE_HOURLY = [0] * 6 + [0.2, 0.4, 0.6, 0.8, 1, 1, 1, 1, 0.8, 0.6, 0.4, 0.2] + [0] * 6
 
 
-def test_add_pv():
+def test_allow_additional_pv():
     n_timesteps = 48
     pv_profile = PV_PROFILE_HOURLY * (1 + 50 // len(PV_PROFILE_HOURLY))
     pv_profile = pv_profile[0:n_timesteps]
@@ -70,7 +70,7 @@ def test_add_pv():
         hours_per_timestep=1,
         n_timesteps=n_timesteps,
         price_timeseries=pd.DataFrame({"grid": [0.3] * n_timesteps, "consumption_site": [0] * n_timesteps}),
-        add_pv=True,
+        allow_additional_pv=True,
         pv_generation_timeseries=pd.DataFrame({"grid": 0, "consumption_site": pv_profile}),
         interest_rate=0,
     )

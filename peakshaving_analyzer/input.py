@@ -22,7 +22,7 @@ class Config(IOHandler):
     name: str
     overwrite_existing_optimization: bool = False
     add_storage: bool = True
-    add_pv: bool = False
+    allow_additional_pv: bool = False
     auto_opt: bool = False
     solver: str = "appsi_highs"
     verbose: bool = False
@@ -114,7 +114,8 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
     _read_or_create_price_timeseries(data)
     log.info("Price timeseries loaded or created")
 
-    if data["add_pv"]:
+    # new PV
+    if data["allow_additional_pv"]:
         if data["pv_file_path"]:
             data["pv_generation_timeseries"] = pd.read_csv(data["config_dir"] / data["pv_file_path"])[
                 data.get("pv_value_column", "value")
@@ -125,9 +126,9 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
             log.info("pv generation timeseries retrieved from brightsky")
         else:
             msg = "No pv generation timeseries available."
-            msg += " Setting add_pv to False."
+            msg += " Setting allow_additional_pv to False."
             log.warning(msg)
-            data["add_pv"] = False
+            data["allow_additional_pv"] = False
 
     _check_timeseries_length(data)
 
@@ -386,7 +387,7 @@ def _fetch_pv_timeseries(data):
     """
 
     # if we want to add pv / PV...
-    if data.get("add_pv"):
+    if data.get("allow_additional_pv"):
         # and we have a given timeseries for generation
         if data.get("pv_generation_timeseries"):
             # we dont need to do anything

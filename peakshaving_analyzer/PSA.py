@@ -21,7 +21,7 @@ class PeakShavingAnalyzer:
         self.price_timeseries = config.price_timeseries
         self.verbose = config.verbose
 
-        if self.config.add_pv:
+        if self.config.allow_additional_pv:
             self.pv_generation_timeseries = config.pv_generation_timeseries
 
         if config.verbose:
@@ -39,7 +39,7 @@ class PeakShavingAnalyzer:
             self.add_storage()
             log.info("Added storage.")
 
-        if self.config.add_pv:
+        if self.config.allow_additional_pv:
             self.add_pv()
             log.info("Added pv.")
 

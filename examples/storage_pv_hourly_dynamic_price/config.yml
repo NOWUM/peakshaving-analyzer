@@ -6,7 +6,7 @@ name: storage_pv_hourly_dynamic_price    # name of the optimization
 hours_per_timestep: 1    # 1 hour timesteps
 
 add_storage: True   # wether to add storage to optimization or not
-add_pv: True    # wether to add pv system to optimization or not
+allow_additional_pv: True    # wether to add pv system to optimization or not
 
 auto_opt: False    # Wether to automatically start optizmization or not
 solver: "gurobi"

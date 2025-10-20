@@ -3,7 +3,7 @@ name: storage_only_quarterhourly_fixed_price    # name of the optimization
 hours_per_timestep: 0.25    # quarter hour timesteps
 
 add_storage: True   # wether to add storage to optimization or not
-add_pv: False    # wether to add pv system to optimization or not
+allow_additional_pv: False    # wether to add pv system to optimization or not
 
 auto_opt: False    # Wether to automatically start optizmization or not
 solver: "gurobi"

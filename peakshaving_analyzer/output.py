@@ -200,7 +200,7 @@ def _retrieve_timeseries(data: dict[str], esm: fn.EnergySystemModel, config: Con
         data["storage_discharge_kw"] = pd.Series(0, index=list(range(config.n_timesteps)))
         data["storage_soc_kwh"] = pd.Series(0, index=list(range(config.n_timesteps)))
 
-    if config.add_pv:
+    if config.allow_additional_pv:
         data["pv_generation_kw"] = (
             _get_optimum_ts(
                 esm=esm,
