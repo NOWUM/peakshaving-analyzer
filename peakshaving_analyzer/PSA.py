@@ -35,6 +35,10 @@ class PeakShavingAnalyzer:
         self._add_sink()
         log.info("Built default ESM.")
 
+        if self.config.pv_system_already_exists:
+            self._add_existing_pv()
+            log.info("Added existing PV system.")
+
         if self.config.add_storage:
             self.add_storage()
             log.info("Added storage.")
@@ -108,11 +112,23 @@ class PeakShavingAnalyzer:
             )
         )
 
+    def _add_existing_pv(self):
+        self.esm.add(
+            fn.Source(
+                esM=self.esm,
+                name="Existing PV",
+                commodity="energy",
+                hasCapacityVariable=True,
+                operationRateMax=self.config.existing_pv_generation_timeseries,
+                capacityMax=self.config.existing_pv_size_kwp,
+            )
+        )
+
     def add_additional_pv(self):
         self.esm.add(
             fn.Source(
                 esM=self.esm,
-                name="PV",
+                name="New PV",
                 commodity="energy",
                 hasCapacityVariable=True,
                 operationRateMax=self.config.new_pv_generation_timeseries,
