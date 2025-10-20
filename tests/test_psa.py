@@ -71,7 +71,7 @@ def test_allow_additional_pv():
         n_timesteps=n_timesteps,
         price_timeseries=pd.DataFrame({"grid": [0.3] * n_timesteps, "consumption_site": [0] * n_timesteps}),
         allow_additional_pv=True,
-        pv_generation_timeseries=pd.DataFrame({"grid": 0, "consumption_site": pv_profile}),
+        new_pv_generation_timeseries=pd.DataFrame({"grid": 0, "consumption_site": pv_profile}),
         interest_rate=0,
     )
     psa = PeakShavingAnalyzer(config=config)

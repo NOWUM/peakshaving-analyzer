@@ -22,7 +22,7 @@ class PeakShavingAnalyzer:
         self.verbose = config.verbose
 
         if self.config.allow_additional_pv:
-            self.pv_generation_timeseries = config.pv_generation_timeseries
+            self.new_pv_generation_timeseries = config.new_pv_generation_timeseries
 
         if config.verbose:
             log.setLevel(level=logging.INFO)
@@ -115,7 +115,7 @@ class PeakShavingAnalyzer:
                 name="PV",
                 commodity="energy",
                 hasCapacityVariable=True,
-                operationRateFix=self.config.pv_generation_timeseries,
+                operationRateFix=self.config.new_pv_generation_timeseries,
                 capacityMax=self.config.max_pv_system_size_kwp,
                 investPerCapacity=self.config.pv_system_cost_per_kwp,
                 interestRate=self.config.interest_rate / 100,

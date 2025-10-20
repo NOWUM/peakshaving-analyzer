@@ -58,6 +58,7 @@ class Config(IOHandler):
     pv_system_cost_per_kwp: float = 1200.0
     max_pv_system_size_kwp: float | None = None
     pv_system_kwp_per_m2: float = 0.4
+    new_pv_generation_timeseries: pd.Series | None = None
 
     # economic parameters
     overwrite_price_timeseries: bool = False
@@ -76,7 +77,7 @@ class Config(IOHandler):
 
         df["consumption_kw"] = self.consumption_timeseries
         df["energy_price_eur"] = self.price_timeseries["grid"]
-        df["pv_generation_kw"] = self.pv_generation_timeseries["consumption_site"]
+        df["new_pv_generation_kw"] = self.new_pv_generation_timeseries["consumption_site"]
 
         return df
 
@@ -122,7 +123,7 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
     # new PV
     if data["allow_additional_pv"]:
         if data["new_pv_file_path"]:
-            data["pv_generation_timeseries"] = pd.read_csv(data["config_dir"] / data["new_pv_file_path"])[
+            data["new_pv_generation_timeseries"] = pd.read_csv(data["config_dir"] / data["new_pv_file_path"])[
                 data.get("new_pv_value_column", "value")
             ]
             log.info("pv generation timeseries loaded")
@@ -394,19 +395,19 @@ def _fetch_pv_timeseries(data):
     # if we want to add pv / PV...
     if data.get("allow_additional_pv"):
         # and we have a given timeseries for generation
-        if data.get("pv_generation_timeseries"):
+        if data.get("new_pv_generation_timeseries"):
             # we dont need to do anything
             pass
 
         # if we have a given postal code
         elif data.get("postal_code"):
             # fetch the generation timeseries for this from brightsky
-            data["pv_generation_timeseries"] = _fetch_pv_from_brighsky(data)
+            data["new_pv_generation_timeseries"] = _fetch_pv_from_brighsky(data)
 
         # if we dont have a given postal code
         elif not data.get("postal_code"):
             # get default pv generation timeseries for germany
-            data["pv_generation_timeseries"] = _fetch_pv_default(data)
+            data["new_pv_generation_timeseries"] = _fetch_pv_default(data)
 
 
 def _fetch_pv_from_brighsky(data):
@@ -540,9 +541,9 @@ def _check_timeseries_length(data):
         msg = "Length of price timeseries does not match expected number of timesteps. "
         msg += f"Expected number of timesteps: {data['n_timesteps']}, given timesteps: {len(data['price_timeseries'])}"
         raise ValueError(msg)
-    if "pv_generation_timeseries" in data and len(data["pv_generation_timeseries"]) != data["n_timesteps"]:
+    if "new_pv_generation_timeseries" in data and len(data["new_pv_generation_timeseries"]) != data["n_timesteps"]:
         msg = "Length of pv timeseries does not match expected number of timesteps. "
-        msg += f"Expected number of timesteps: {data['n_timesteps']}, given timesteps: {len(data['pv_generation_timeseries'])}"
+        msg += f"Expected number of timesteps: {data['n_timesteps']}, given timesteps: {len(data['new_pv_generation_timeseries'])}"
         raise ValueError(msg)
     log.info("Timeseries length check passed.")
 
