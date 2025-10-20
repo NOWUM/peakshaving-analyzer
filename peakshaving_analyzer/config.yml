@@ -69,8 +69,16 @@ inverter_cost_per_kw: 180   # storage inverter cost in euro per kw
 # Existing PV system parameters #
 #################################
 pv_system_already_exists: False # Wether there is an existing PV system or not. If set to 'False', all following parameters will be ignored
-existing_pv_file_path: # File path, where PV generation from existing system is stored as .csv
-existing_pv_column: # Name of the column where existing pv generation is provided
+
+# generation timeseries for existing PV system.
+# If you don't have that, see below
+existing_pv_file_path: # File path, where PV generation from existing system is stored as .csv. Values should in kW
+existing_pv_column: # Name of the column where existing pv generation is provided.
+
+# If you don't have a timeseries for your current systems generation, you can provide the system size (in kWp) and your postal code,
+# with which we will calculate the generation for you.
+existing_pv_size_kwp: # only set this, if you don't have a timeseries for the existing pv system generation
+postal_code:  # postal code to get generation curve for
 
 ############################
 # New PV system parameters #
@@ -93,7 +101,6 @@ max_pv_system_size_kwp:   # maximum available pv system size in kWpeak (leave em
 # value column needs to contain values from 0 (no pv generation) to 1 (max pv generation)
 new_pv_file_path:     # file path where pv generation is stored as .csv
 new_pv_value_column:  # name of the column where pv generation is provided
-postal_code: # postal code for automtic pv generation calculation, leave empty for own timeseries
 
 
 #######################

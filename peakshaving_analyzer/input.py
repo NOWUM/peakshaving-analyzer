@@ -28,10 +28,9 @@ class Config(IOHandler):
     verbose: bool = False
     postal_code: int | str | None = None
 
-    # timeseries
+    # general timeseries
     consumption_timeseries: pd.Series | None = None
     price_timeseries: pd.Series | None = None
-    pv_generation_timeseries: pd.Series | None = None
 
     # storage system (battery) parameters
     storage_lifetime: int = 15
@@ -51,7 +50,7 @@ class Config(IOHandler):
     # Existing PV system parameters
     pv_system_already_exists: bool = False
     existing_pv_size_kwp: float | None = None
-    existing_pv_timeseries: pd.Series | None = None
+    existing_pv_generation_timeseries: pd.Series | None = None
 
     # New PV system parameters
     pv_system_lifetime: int = 30
@@ -120,16 +119,49 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
     _read_or_create_price_timeseries(data)
     log.info("Price timeseries loaded or created")
 
+    # check existing timeseries
+    if data["pv_system_already_exists"]:
+        # load from CSV if provided
+        if ["existing_pv_file_path"]:
+            data["existing_pv_generation_timeseries"] = pd.read_csv(data["config_dir"] / data["existing_pv_file_path"])[
+                data.get("existing_pv_value_column", "value")
+            ]
+            log.info("existing pv generation timeseries loaded")
+
+        # load by weather data combined with system size
+        elif data["postal_code"] and data["existing_pv_size_kwp"]:
+            pv_gen = _fetch_pv_from_brighsky(data)
+            pv_gen *= data["existing_pv_size_kwp"]
+            data["existing_pv_generation_timeseries"] = pv_gen.copy()
+
+        # fail and raise warning
+        else:
+            msg = "No PV generation timeseries for existing system available."
+            msg += " Setting pv_system_already_exists to False."
+            log.warning(msg)
+            data["pv_system_already_exists"] = False
+
     # new PV
     if data["allow_additional_pv"]:
+        # load from CSV if provided
         if data["new_pv_file_path"]:
             data["new_pv_generation_timeseries"] = pd.read_csv(data["config_dir"] / data["new_pv_file_path"])[
                 data.get("new_pv_value_column", "value")
             ]
             log.info("pv generation timeseries loaded")
+
+        # load by using existing timeseries
+        elif data["existing_pv_generation_timeseries"]:
+            pv_gen = data["existing_pv_generation_timeseries"].copy()  # use existing
+            pv_gen = pv_gen / pv_gen["consumption_site"].max()  # scale existing to 0 to 1
+
+        # load by postal code from brightsky
         elif data["postal_code"]:
-            _fetch_pv_timeseries(data)
+            pv_gen = _fetch_pv_from_brighsky(data)
+            data["new_pv_generation_timeseries"] = pv_gen.copy()
             log.info("pv generation timeseries retrieved from brightsky")
+
+        # fail and raise warning
         else:
             msg = "No pv generation timeseries available."
             msg += " Setting allow_additional_pv to False."
