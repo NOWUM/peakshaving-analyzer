@@ -116,9 +116,9 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
 
     # new PV
     if data["allow_additional_pv"]:
-        if data["pv_file_path"]:
-            data["pv_generation_timeseries"] = pd.read_csv(data["config_dir"] / data["pv_file_path"])[
-                data.get("pv_value_column", "value")
+        if data["new_pv_file_path"]:
+            data["pv_generation_timeseries"] = pd.read_csv(data["config_dir"] / data["new_pv_file_path"])[
+                data.get("new_pv_value_column", "value")
             ]
             log.info("pv generation timeseries loaded")
         elif data["postal_code"]:
@@ -553,8 +553,8 @@ def _remove_unused_keys(data):
         "consumption_value_column",
         "price_file_path",
         "price_value_column",
-        "pv_file_path",
-        "pv_value_column",
+        "new_pv_file_path",
+        "new_pv_value_column",
         "leap_year",
         "assumed_year",
         "config_dir",

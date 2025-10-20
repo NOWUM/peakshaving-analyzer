@@ -26,8 +26,8 @@ price_value_column:                            # name of the column where prices
 postal_code:    # postal code for automtic pv generation calculation, leave empty for own timeseries
 # if not provided, pv generation will be calculated with the following parameters
 # value column needs to contain values from 0 (no pv generation) to 1 (max pv generation)
-pv_file_path: # file path where pv generation is stored as .csv
-pv_value_column:                                   # name of the column where pv generation is provided
+new_pv_file_path: # file path where pv generation is stored as .csv
+new_pv_value_column:                                   # name of the column where pv generation is provided
 
 ################################
 # storage (battery) parameters #
