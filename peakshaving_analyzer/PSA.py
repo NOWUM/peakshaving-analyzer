@@ -40,7 +40,7 @@ class PeakShavingAnalyzer:
             log.info("Added storage.")
 
         if self.config.allow_additional_pv:
-            self.add_pv()
+            self.add_additional_pv()
             log.info("Added pv.")
 
     def _create_esm(self):
@@ -108,7 +108,7 @@ class PeakShavingAnalyzer:
             )
         )
 
-    def add_pv(self):
+    def add_additional_pv(self):
         self.esm.add(
             fn.Source(
                 esM=self.esm,
