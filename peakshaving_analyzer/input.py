@@ -243,7 +243,7 @@ def load_oeds_config(
 
 def _create_timeseries_metadata(data):
     # if no timestamps are given, we create them
-    if not data.get("timestamps", None):
+    if data.get("timestamps", None) is not None:
         data["n_timesteps"] = len(data["consumption_timeseries"])
         data["leap_year"] = _detect_leap_year(data)
         data["assumed_year"] = _assume_year(data)
