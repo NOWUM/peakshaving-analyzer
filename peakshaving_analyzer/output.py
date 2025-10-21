@@ -22,7 +22,8 @@ class Results(IOHandler):
     storage_charge_kw: pd.Series | None = None
     storage_discharge_kw: pd.Series | None = None
     storage_soc_kwh: pd.Series | None = None
-    solar_generation_kw: pd.Series | None = None
+    existing_pv_generation_kw: pd.Series | None = None
+    new_pv_generation_kw: pd.Series | None = None
     consumption_kw: pd.Series | None = None
     energy_price_eur: pd.Series | None = None
 
@@ -42,10 +43,10 @@ class Results(IOHandler):
     inverter_annuity_eur: float | None = None
     inverter_capacity_kw: float | None = None
 
-    # solar system costs
-    solar_invest_eur: float | None = None
-    solar_annuity_eur: float | None = None
-    solar_capacity_kwp: float | None = None
+    # pv system costs
+    new_pv_invest_eur: float | None = None
+    new_pv_annuity_eur: float | None = None
+    new_pv_capacity_kwp: float | None = None
 
     # total costs
     total_yearly_costs_eur: float | None = None
@@ -64,7 +65,8 @@ class Results(IOHandler):
         df["storage_charge_kw"] = self.storage_charge_kw
         df["storage_discharge_kw"] = self.storage_discharge_kw
         df["storage_soc_kwh"] = self.storage_soc_kwh
-        df["solar_generation_kw"] = self.solar_generation_kw
+        df["existing_pv_generation_kw"] = self.existing_pv_generation_kw
+        df["new_pv_generation_kw"] = self.new_pv_generation_kw
         df["consumption_kw"] = self.consumption_kw
         df["energy_price_eur"] = self.energy_price_eur
 
@@ -99,7 +101,13 @@ class Results(IOHandler):
         self._plot(cols_to_plot=storage_columns)
 
     def plot_consumption_timeseries(self):
-        consumption_columns = ["grid_usage_kw", "storage_discharge_kw", "solar_generation_kw", "consumption_kw"]
+        consumption_columns = [
+            "grid_usage_kw",
+            "storage_discharge_kw",
+            "existing_pv_generation_kw",
+            "new_pv_generation_kw",
+            "consumption_kw",
+        ]
         self._plot(cols_to_plot=consumption_columns)
 
 
@@ -200,19 +208,33 @@ def _retrieve_timeseries(data: dict[str], esm: fn.EnergySystemModel, config: Con
         data["storage_discharge_kw"] = pd.Series(0, index=list(range(config.n_timesteps)))
         data["storage_soc_kwh"] = pd.Series(0, index=list(range(config.n_timesteps)))
 
-    if config.add_solar:
-        data["solar_generation_kw"] = (
+    if config.pv_system_already_exists:
+        data["existing_pv_generation_kw"] = (
             _get_optimum_ts(
                 esm=esm,
                 model_name="SourceSinkModel",
                 variable="operationVariablesOptimum",
-                index=("PV", "consumption_site"),
+                index=("Existing PV", "consumption_site"),
             )
             / config.hours_per_timestep
         )
 
     else:
-        data["solar_generation_kw"] = pd.Series(0, index=list(range(config.n_timesteps)))
+        data["existing_pv_generation_kw"] = pd.Series(0, index=list(range(config.n_timesteps)))
+
+    if config.allow_additional_pv:
+        data["new_pv_generation_kw"] = (
+            _get_optimum_ts(
+                esm=esm,
+                model_name="SourceSinkModel",
+                variable="operationVariablesOptimum",
+                index=("New PV", "consumption_site"),
+            )
+            / config.hours_per_timestep
+        )
+
+    else:
+        data["new_pv_generation_kw"] = pd.Series(0, index=list(range(config.n_timesteps)))
 
     data["consumption_kw"] = config.consumption_timeseries
     data["energy_price_eur"] = config.price_timeseries["grid"]
@@ -240,10 +262,10 @@ def _retrieve_system_sizes(data: dict, esm: fn.EnergySystemModel) -> None:
         location="consumption_site",
     )
 
-    data["solar_capacity_kwp"] = _get_val_from_summary(
+    data["new_pv_capacity_kwp"] = _get_val_from_summary(
         esm=esm,
         model_name="SourceSinkModel",
-        index=("PV", "capacity", "[kWh]"),
+        index=("New PV", "capacity", "[kWh]"),
         location="consumption_site",
     )
 
@@ -302,17 +324,17 @@ def _retrieve_system_costs(data: dict[str], esm: fn.EnergySystemModel) -> None:
         location="consumption_site",
     )
 
-    # solar data
-    data["solar_invest_eur"] = _get_val_from_summary(
+    # pv data
+    data["new_pv_invest_eur"] = _get_val_from_summary(
         esm=esm,
         model_name="SourceSinkModel",
-        index=("PV", "invest", "[Euro]"),
+        index=("New PV", "invest", "[Euro]"),
         location="consumption_site",
     )
-    data["solar_annuity_eur"] = _get_val_from_summary(
+    data["new_pv_annuity_eur"] = _get_val_from_summary(
         esm=esm,
         model_name="SourceSinkModel",
-        index=("PV", "TAC", "[Euro/a]"),
+        index=("New PV", "TAC", "[Euro/a]"),
         location="consumption_site",
     )
 
@@ -323,7 +345,7 @@ def _retrieve_system_costs(data: dict[str], esm: fn.EnergySystemModel) -> None:
         + data["grid_capacity_costs_eur"]
         + data["storage_annuity_eur"]
         + data["inverter_annuity_eur"]
-        + data["solar_annuity_eur"]
+        + data["new_pv_annuity_eur"]
     )
-    data["total_annuity_eur"] = data["storage_annuity_eur"] + data["inverter_annuity_eur"] + data["solar_annuity_eur"]
-    data["total_invest_eur"] = data["storage_invest_eur"] + data["inverter_invest_eur"] + data["solar_invest_eur"]
+    data["total_annuity_eur"] = data["storage_annuity_eur"] + data["inverter_annuity_eur"] + data["new_pv_annuity_eur"]
+    data["total_invest_eur"] = data["storage_invest_eur"] + data["inverter_invest_eur"] + data["new_pv_invest_eur"]

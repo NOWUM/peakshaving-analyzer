@@ -22,40 +22,49 @@ class Config(IOHandler):
     name: str
     overwrite_existing_optimization: bool = False
     add_storage: bool = True
-    add_solar: bool = False
+    allow_additional_pv: bool = False
     auto_opt: bool = False
     solver: str = "appsi_highs"
     verbose: bool = False
     postal_code: int | str | None = None
 
-    # timeseries
+    # general timeseries
     consumption_timeseries: pd.Series | None = None
     price_timeseries: pd.Series | None = None
-    solar_generation_timeseries: pd.Series | None = None
+
+    # storage system (battery) parameters
+    storage_lifetime: int = 15
+    storage_cost_per_kwh: float = 285
+    storage_charge_efficiency: float = 0.95
+    storage_discharge_efficiency: float = 0.95
+    storage_charge_rate: float = 5
+    storage_cyclic_lifetime: float = 10000
+    storage_discharge_rate: float = 5
+    max_storage_size_kwh: float | None = None
+
+    # storage system (inverter) parameters
+    inverter_efficiency: float = 0.95
+    inverter_cost_per_kw: float = 180
+    inverter_lifetime: int = 15
+
+    # Existing PV system parameters
+    pv_system_already_exists: bool = False
+    existing_pv_size_kwp: float | None = None
+    existing_pv_generation_timeseries: pd.Series | None = None
+
+    # New PV system parameters
+    pv_system_lifetime: int = 30
+    pv_system_cost_per_kwp: float = 1200.0
+    max_pv_system_size_kwp: float | None = None
+    pv_system_kwp_per_m2: float = 0.4
+    new_pv_generation_timeseries: pd.Series | None = None
 
     # economic parameters
     overwrite_price_timeseries: bool = False
     producer_energy_price: float = 0.1665
     grid_capacity_price: float = 101.22
     grid_energy_price: float = 0.046
-    pv_system_lifetime: int = 30
-    pv_system_cost_per_kwp: float = 1200.0
-    inverter_lifetime: int = 15
-    inverter_cost_per_kw: float = 180
-    storage_lifetime: int = 15
-    storage_cost_per_kwh: float = 285
     interest_rate: float = 2
-
-    # technical parameters
-    max_storage_size_kwh: float | None = None
-    storage_charge_efficiency: float = 0.95
-    storage_discharge_efficiency: float = 0.95
-    storage_charge_rate: float = 5
-    storage_cyclic_lifetime: float = 10000
-    storage_discharge_rate: float = 5
-    inverter_efficiency: float = 0.95
-    max_pv_system_size_kwp: float | None = None
-    pv_system_kwp_per_m2: float = 0.4
 
     # metadata needed for optimization (set by peakshaving analyzer)
     timestamps: pd.DatetimeIndex | None = None
@@ -67,12 +76,12 @@ class Config(IOHandler):
 
         df["consumption_kw"] = self.consumption_timeseries
         df["energy_price_eur"] = self.price_timeseries["grid"]
-        df["solar_generation_kw"] = self.solar_generation_timeseries["consumption_site"]
+        df["new_pv_generation_kw"] = self.new_pv_generation_timeseries["consumption_site"]
 
         return df
 
 
-def load_yaml_config(config_file_path: Path | str) -> Config:
+def load_yaml_config(config_file_path: Path | str, test_mode: bool = False) -> Config:
     config_path = Path(config_file_path)
 
     # read in configuration file
@@ -110,22 +119,12 @@ def load_yaml_config(config_file_path: Path | str) -> Config:
     _read_or_create_price_timeseries(data)
     log.info("Price timeseries loaded or created")
 
-    if data["add_solar"]:
-        if data["solar_file_path"]:
-            data["solar_generation_timeseries"] = pd.read_csv(data["config_dir"] / data["solar_file_path"])[
-                data.get("solar_value_column", "value")
-            ]
-            log.info("Solar generation timeseries loaded")
-        elif data["postal_code"]:
-            _fetch_solar_timeseries(data)
-            log.info("Solar generation timeseries retrieved from brightsky")
-        else:
-            msg = "No solar generation timeseries available."
-            msg += " Setting add_solar to False."
-            log.warning(msg)
-            data["add_solar"] = False
+    # check existing timeseries
+    _load_pv_timeseries(data)
+    log.info("PV generation timeseries loaded or created")
 
-    _check_timeseries_length(data)
+    if not test_mode:
+        _check_timeseries_length(data)
 
     _remove_unused_keys(data)
 
@@ -200,8 +199,8 @@ def load_oeds_config(
     # read or create price timeseries
     _read_or_create_price_timeseries(data)
 
-    # retrieve solar generation timeseries
-    _fetch_solar_timeseries(data)
+    # retrieve pv generation timeseries
+    _load_pv_timeseries(data)
 
     # calculate if consumption is over 2500h full load hours
     is_over_2500h = (data["consumption_timeseries"].sum() / 4) / data["consumption_timeseries"].max() > 2500
@@ -373,34 +372,72 @@ def _read_price_timeseries(data):
     return df[["consumption_site", "grid"]]
 
 
-def _fetch_solar_timeseries(data):
+def _load_pv_timeseries(data):
     """
-    Read the solar timeseries from brightsky.
+    Read the pv timeseries from brightsky.
 
     Returns:
-        pd.Series: The solar timeseries.
+        pd.Series: The pv timeseries.
     """
 
-    # if we want to add solar / PV...
-    if data.get("add_solar"):
-        # and we have a given timeseries for generation
-        if data.get("solar_generation_timeseries"):
-            # we dont need to do anything
-            pass
+    # existing PV systems
+    if data.get("pv_system_already_exists"):
+        # load from CSV if provided
+        if data.get("existing_pv_file_path"):
+            pv_gen = pd.read_csv(data["config_dir"] / data["existing_pv_file_path"])[
+                data.get("existing_pv_value_column", "value")
+            ]
+            pv_gen.rename("consumption_site", inplace=True)
+            data["existing_pv_size_kwp"] = pv_gen.max()  # set existing system size
+            pv_gen = pv_gen / pv_gen.max()  # scale to values from 0 to 1
+            log.info("existing pv generation timeseries loaded")
 
-        # if we have a given postal code
+        # load by weather data combined with system size
+        elif data.get("postal_code") and data.get("existing_pv_size_kwp"):
+            pv_gen = _fetch_pv_from_brighsky(data)
+
+        # fail and raise warning
+        else:
+            msg = "No PV generation timeseries for existing system available."
+            msg += " Setting pv_system_already_exists to False."
+            pv_gen = None
+            log.warning(msg)
+            data["pv_system_already_exists"] = False
+
+        if pv_gen is not None:
+            existing_pv_gen_df = _pv_dataframe_from_series(pv_gen)
+            data["existing_pv_generation_timeseries"] = existing_pv_gen_df
+
+    # if we want to add pv / PV...
+    if data.get("allow_additional_pv"):
+        # load from csv if provided
+        if data.get("new_pv_file_path"):
+            pv_gen = pd.read_csv(data["config_dir"] / data["new_pv_file_path"])[
+                data.get("new_pv_value_column", "value")
+            ]
+            pv_gen.rename("consumption_site", inplace=True)
+            log.info("existing pv generation timeseries loaded")
+
+        # use existing curve if given
+        elif data.get("existing_pv_generation_timeseries") is not None:
+            pv_gen = data["existing_pv_generation_timeseries"]["consumption_site"].copy()
+
+        # use postal code if given
         elif data.get("postal_code"):
             # fetch the generation timeseries for this from brightsky
-            data["solar_generation_timeseries"] = _fetch_solar_from_brighsky(data)
+            pv_gen = _fetch_pv_from_brighsky(data)
 
-        # if we dont have a given postal code
+        # retrieve default for germany if nothing is provided
         elif not data.get("postal_code"):
-            # get default solar generation timeseries for germany
-            data["solar_generation_timeseries"] = _fetch_solar_default(data)
+            # get default pv generation timeseries for germany
+            pv_gen = _fetch_pv_default(data)
+
+        new_pv_gen_df = _pv_dataframe_from_series(pv_gen)
+        data["new_pv_generation_timeseries"] = new_pv_gen_df
 
 
-def _fetch_solar_from_brighsky(data):
-    log.info("Fetching solar timeseries from BrightSky API.")
+def _fetch_pv_from_brighsky(data) -> pd.Series:
+    log.info("Fetching pv timeseries from BrightSky API.")
     # convert postal code to coordinates
     nomi = pgeocode.Nominatim("de")
     q = nomi.query_postal_code(data["postal_code"])
@@ -416,13 +453,10 @@ def _fetch_solar_from_brighsky(data):
 
     # put data in dataframe
     df = pd.DataFrame(weather_data["weather"])[["solar"]]
-    log.info("Solar timeseries data fetched successfully.")
+    log.info("PV timeseries data fetched successfully.")
 
     # rename to location in ESM, add grid column with no operation possible
     df.rename(columns={"solar": "consumption_site"}, inplace=True)
-    df["grid"] = 0
-
-    df.fillna(0, inplace=True)
 
     # resample to match hours per timestep
     if data["hours_per_timestep"] != 1:
@@ -435,12 +469,12 @@ def _fetch_solar_from_brighsky(data):
 
     # convert from kWh/m2 to kW
     # kWh/m2/h = kW/m2 = 1000W/m2
-    # no converseion necessary, as solar modules are tested with 1000W/m2
+    # no conversion necessary, as pv modules are tested with 1000W/m2
 
-    return df
+    return df["consumption_site"]
 
 
-def _fetch_solar_default(data):
+def _fetch_pv_default(data) -> pd.Series:
     url = "https://www.renewables.ninja/country_downloads/DE/ninja-pv-country-DE-national-merra2.csv"
     response = requests.get(url)
     df = pd.read_csv(BytesIO(response.content), delimiter=",", header=3)
@@ -463,7 +497,7 @@ def _fetch_solar_default(data):
             n_timesteps=data["n_timesteps"],
         )
 
-    return df
+    return df["consumption_site"]
 
 
 def _resample_dataframe(df: pd.DataFrame, hours_per_timestep: float, assumed_year: int, n_timesteps: int):
@@ -476,7 +510,7 @@ def _resample_dataframe(df: pd.DataFrame, hours_per_timestep: float, assumed_yea
         pd.DataFrame: the resampled dataframe.
     """
 
-    log.info("Resampling solar timeseries to match your specifications")
+    log.info("Resampling pv timeseries to match your specifications")
 
     df["timestamp"] = pd.date_range(start=f"{assumed_year}-01-01", periods=len(df), freq="H")
 
@@ -509,7 +543,17 @@ def _resample_dataframe(df: pd.DataFrame, hours_per_timestep: float, assumed_yea
 
     df.reset_index(drop=True, inplace=True)
 
-    log.info("Successfully resampled solar timeseries.")
+    log.info("Successfully resampled pv timeseries.")
+
+    return df
+
+
+def _pv_dataframe_from_series(s: pd.Series) -> pd.DataFrame:
+    df = pd.DataFrame(columns=["consumption_site", "grid"])
+    df["consumption_site"] = s.copy()
+    df["grid"] = 0
+
+    df.fillna(0, inplace=True)
 
     return df
 
@@ -530,9 +574,9 @@ def _check_timeseries_length(data):
         msg = "Length of price timeseries does not match expected number of timesteps. "
         msg += f"Expected number of timesteps: {data['n_timesteps']}, given timesteps: {len(data['price_timeseries'])}"
         raise ValueError(msg)
-    if "solar_generation_timeseries" in data and len(data["solar_generation_timeseries"]) != data["n_timesteps"]:
-        msg = "Length of solar timeseries does not match expected number of timesteps. "
-        msg += f"Expected number of timesteps: {data['n_timesteps']}, given timesteps: {len(data['solar_generation_timeseries'])}"
+    if "new_pv_generation_timeseries" in data and len(data["new_pv_generation_timeseries"]) != data["n_timesteps"]:
+        msg = "Length of pv timeseries does not match expected number of timesteps. "
+        msg += f"Expected number of timesteps: {data['n_timesteps']}, given timesteps: {len(data['new_pv_generation_timeseries'])}"
         raise ValueError(msg)
     log.info("Timeseries length check passed.")
 
@@ -548,8 +592,10 @@ def _remove_unused_keys(data):
         "consumption_value_column",
         "price_file_path",
         "price_value_column",
-        "solar_file_path",
-        "solar_value_column",
+        "existing_pv_file_path",
+        "existing_pv_value_column",
+        "new_pv_file_path",
+        "new_pv_value_column",
         "leap_year",
         "assumed_year",
         "config_dir",

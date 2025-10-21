@@ -21,8 +21,8 @@ class PeakShavingAnalyzer:
         self.price_timeseries = config.price_timeseries
         self.verbose = config.verbose
 
-        if self.config.add_solar:
-            self.solar_generation_timeseries = config.solar_generation_timeseries
+        if self.config.allow_additional_pv:
+            self.new_pv_generation_timeseries = config.new_pv_generation_timeseries
 
         if config.verbose:
             log.setLevel(level=logging.INFO)
@@ -35,13 +35,17 @@ class PeakShavingAnalyzer:
         self._add_sink()
         log.info("Built default ESM.")
 
+        if self.config.pv_system_already_exists:
+            self._add_existing_pv()
+            log.info("Added existing PV system.")
+
         if self.config.add_storage:
             self.add_storage()
             log.info("Added storage.")
 
-        if self.config.add_solar:
-            self.add_solar()
-            log.info("Added solar.")
+        if self.config.allow_additional_pv:
+            self.add_additional_pv()
+            log.info("Added pv.")
 
     def _create_esm(self):
         self.esm = fn.EnergySystemModel(
@@ -108,14 +112,26 @@ class PeakShavingAnalyzer:
             )
         )
 
-    def add_solar(self):
+    def _add_existing_pv(self):
         self.esm.add(
             fn.Source(
                 esM=self.esm,
-                name="PV",
+                name="Existing PV",
                 commodity="energy",
                 hasCapacityVariable=True,
-                operationRateFix=self.config.solar_generation_timeseries,
+                operationRateMax=self.config.existing_pv_generation_timeseries,
+                capacityMax=self.config.existing_pv_size_kwp,
+            )
+        )
+
+    def add_additional_pv(self):
+        self.esm.add(
+            fn.Source(
+                esM=self.esm,
+                name="New PV",
+                commodity="energy",
+                hasCapacityVariable=True,
+                operationRateMax=self.config.new_pv_generation_timeseries,
                 capacityMax=self.config.max_pv_system_size_kwp,
                 investPerCapacity=self.config.pv_system_cost_per_kwp,
                 interestRate=self.config.interest_rate / 100,
@@ -141,6 +157,10 @@ class PeakShavingAnalyzer:
             )
         )
 
+        if self.config.max_storage_size_kwh:
+            max_cap = pd.Series([self.config.max_storage_size_kwh, 0], index=["consumption_site", "grid"])
+        else:
+            max_cap = None
         self.esm.add(
             fn.Storage(
                 esM=self.esm,
@@ -151,7 +171,7 @@ class PeakShavingAnalyzer:
                 cyclicLifetime=self.config.storage_cyclic_lifetime,
                 chargeEfficiency=self.config.storage_charge_efficiency,
                 dischargeEfficiency=self.config.storage_discharge_efficiency,
-                capacityMax=self.config.max_storage_size_kwh,
+                capacityMax=max_cap,
                 economicLifetime=self.config.storage_lifetime,
                 technicalLifetime=self.config.storage_lifetime,
                 chargeRate=self.config.storage_charge_rate,

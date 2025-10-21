@@ -3,19 +3,19 @@
 ###########################
 name: example_optimization    # name of the optimization
 
-hours_per_timestep: 0.25    # in 15-minute timesteps
+hours_per_timestep: 0.25    # quarter hour timesteps
 
 add_storage: True   # wether to add storage to optimization or not
-add_solar: False    # wether to add pv system to optimization or not
+allow_additional_pv: False    # wether to add pv system to optimization or not
 
 auto_opt: False    # Wether to automatically start optizmization or not
 solver: "gurobi"
 
 verbose: True   # Wether to print optimization progress or not
 
-##############
-# timeseries #
-##############
+####################################
+# price and consumption timeseries #
+####################################
 # name of the column where timestamps are provided (should be equal in all files)
 # can be set to None if timestamps are not provided, we will then assume timestamps based on pattern
 timestamp_column:
@@ -26,11 +26,82 @@ consumption_value_column: consumption    # name of the column where consumption 
 price_file_path:  # file path where prices are stored as .csv
 price_value_column: # name of the column where prices are provided
 
-postal_code: 52066   # postal code for automtic solar generation calculation, leave empty for own timeseries
-# if not provided, solar generation will be calculated with the following parameters
-# value column needs to contain values from 0 (no solar generation) to 1 (max solar generation)
-solar_file_path:   # file path where solar generation is stored as .csv
-solar_value_column:                  # name of the column where solar generation is provided
+################################
+# storage (battery) parameters #
+################################
+storage_lifetime: 15    # storage lifetime in years
+# taken from:
+# "Energiespeicher - Bedarf, Technologien, Integration", Stadler Sterner 2017
+
+storage_cost_per_kwh: 145   # storage capacity cost in euro per kwh capacity
+# taken from:
+# https://www.pem.rwth-aachen.de/cms/pem/der-lehrstuhl/presse-medien/aktuelle-meldungen/~bexlow/battery-monitor-2023-nachfrage-waechst/
+
+max_storage_size_kwh:     # maximum available storage size in kWh (leave empty for infinite size)
+
+storage_charge_efficiency: 0.9      # efficiency for charging storage
+storage_discharge_efficiency: 0.9   # efficiency for discharging storage
+# for round trip efficiency of 0.81
+# taken from:
+# https://www.sciencedirect.com/science/article/pii/S2352152X23027846
+
+storage_charge_rate: 1      #
+storage_discharge_rate: 1   #
+# taken from:
+# https://www.sciencedirect.com/science/article/pii/S2590116819300116
+
+#################################
+# storage (inverter) parameters #
+#################################
+inverter_efficiency: 0.95   # efficiency of the storage inverter
+# taken from:
+# https://www.sciencedirect.com/science/article/pii/S1364032116306712
+
+inverter_lifetime: 15   # storage inverter lifetime in years
+# taken from:
+# 10.4229/WCPEC-82022-3DV.1.46 Bucher Joss
+
+inverter_cost_per_kw: 180   # storage inverter cost in euro per kw
+# taken from:
+# https://www.sciencedirect.com/science/article/pii/S1876610216310736
+
+#################################
+# Existing PV system parameters #
+#################################
+pv_system_already_exists: False # Wether there is an existing PV system or not. If set to 'False', all following parameters will be ignored
+
+# generation timeseries for existing PV system.
+# If you don't have that, see below
+existing_pv_file_path: # File path, where PV generation from existing system is stored as .csv. Values should be in kW
+existing_pv_column: # Name of the column where existing pv generation is provided.
+
+# If you don't have a timeseries for your current systems generation, you can provide the system size (in kWp) and your postal code,
+# with which we will calculate the generation for you.
+existing_pv_size_kwp: # only set this, if you don't have a timeseries for the existing pv system generation
+postal_code:  # postal code to get generation curve for
+
+############################
+# New PV system parameters #
+############################
+# these values will only be used, if parameter 'allow_additional_pv' is set to true
+pv_system_lifetime: 30    # pv system lifetime in years
+# taken from:
+# https://www.mdpi.com/1996-1073/14/14/4278
+
+pv_system_cost_per_kwp: 1250    # pv system cost in euro per kWpeak
+# taken from:
+# https://www.ise.fraunhofer.de/de/veroeffentlichungen/studien/studie-stromgestehungskosten-erneuerbare-energien.html
+
+pv_system_kwp_per_m2: 0.4   # energy obtainable per area in kWpeak per m²
+max_pv_system_size_kwp:   # maximum available pv system size in kWpeak (leave empty for infinite size)
+
+# in the following, the generation for a new PV system will be defined.
+# If there is an existing PV system AND a generation timeseries for this system, we will use the generation curve of the existing system,
+# if you choose to not provide a timeseries in the following parameters
+# value column needs to contain values from 0 (no pv generation) to 1 (max pv generation)
+new_pv_file_path:     # file path where pv generation is stored as .csv
+new_pv_value_column:  # name of the column where pv generation is provided
+
 
 #######################
 # economic parameters #
@@ -46,41 +117,8 @@ grid_energy_price: 0.0460     # energy price in euro per kwh to be paid per kwh 
 # mean updated with historical inflation of cumulative 26.24% from:
 # https://zenodo.org/records/13734730
 
-pv_system_lifetime: 30    # pv system lifetime in years
-# taken from: https://www.mdpi.com/1996-1073/14/14/4278
-
-pv_system_cost_per_kwp: 1250    # pv system cost in euro per kWpeak
-# taken from: https://www.ise.fraunhofer.de/de/veroeffentlichungen/studien/studie-stromgestehungskosten-erneuerbare-energien.html
-
-inverter_lifetime: 15   # storage inverter lifetime in years
-# taken from: 10.4229/WCPEC-82022-3DV.1.46 Bucher Joss
-
-inverter_cost_per_kw: 180   # storage inverter cost in euro per kw
-# taken from: https://www.sciencedirect.com/science/article/pii/S1876610216310736
-
 storage_lifetime: 15    # storage lifetime in years
 # taken from: https://link.springer.com/book/10.1007/978-3-662-48893-5
 
 storage_cost_per_kwh: 285   # storage capacity cost in euro per kwh capacity
 # taken from: https://docs.nrel.gov/docs/fy25osti/93281.pdf
-
-interest_rate: 2    # interes rate in %
-
-########################
-# technical parameters #
-########################
-max_storage_size_kwh:     # maximum available storage size in kWh (leave empty for infinite size)
-max_pv_system_size_kwp:   # maximum available pv system size in kWpeak (leave empty for infinite size)
-
-storage_charge_efficiency: 0.95      # efficiency for charging storage
-storage_discharge_efficiency: 0.95   # efficiency for discharging storage
-# for round trip efficiency of 0.9 https://www.sciencedirect.com/science/article/pii/S2352152X23027846
-
-storage_charge_rate: 5      #
-storage_discharge_rate: 5   #
-# is limited by inverter capacity, can be adjusted nontheless
-
-inverter_efficiency: 0.95   # efficiency of the storage inverter
-# taken from: https://www.sciencedirect.com/science/article/pii/S1364032116306712
-
-pv_system_kwp_per_m2: 0.4   # energy obtainable per area in kWpeak per m²

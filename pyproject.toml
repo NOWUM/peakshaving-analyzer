@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "peakshaving-analyzer"
-version = "0.1.7"
+version = "0.1.8"
 description = "Peak shaving analysis for industrial load profiles"
 authors = [
     { name = "Christoph Komanns", email = "c.komanns@gmail.com" },
@@ -53,7 +53,7 @@ dev = [
 psa = "psa_cli.main:cli"
 
 [project.urls]
-Issues = "https://github.com/assume-framework/assume/issues"
+Issues = "https://github.com/NOWUM/peakshaving_analyzer/issues"
 Repository = "https://github.com/NOWUM/peakshaving-analyzer"
 
 [tool.setuptools.packages.find]

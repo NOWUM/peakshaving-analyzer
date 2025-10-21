@@ -1,12 +1,24 @@
 ###########################
+# test relevant parameter #
+###########################
+allow_additional_pv: True    # wether to add pv system to optimization or not
+
+pv_system_already_exists: True
+existing_pv_file_path: # File path, where PV generation from existing system is stored as .csv. Values should be in kW
+existing_pv_value_column: # Name of the column where existing pv generation is provided.
+
+existing_pv_size_kwp: 4 # only set this, if you don't have a timeseries for the existing pv system generation
+postal_code: 52066 # postal code to get generation curve for
+
+###########################
 # optimization_parameters #
 ###########################
-name: storage_quarterhourly_dyn_price    # name of the optimization
 
-hours_per_timestep: 0.25    # quarter hour timesteps
+name: storage_hourly_fixed_price    # name of the optimization
+
+hours_per_timestep: 1    # 1 hour timesteps
 
 add_storage: True   # wether to add storage to optimization or not
-allow_additional_pv: False    # wether to add pv system to optimization or not
 
 auto_opt: False    # Wether to automatically start optizmization or not
 solver: "gurobi"
@@ -20,14 +32,12 @@ verbose: True   # Wether to print optimization progress or not
 # can be set to None if timestamps are not provided, we will then assume timestamps based on pattern
 timestamp_column:
 
-consumption_file_path: consumption.csv   # file path where consumption is stored as .csv
+consumption_file_path: ./data/consumption.csv   # file path where consumption is stored as .csv
 consumption_value_column: consumption                       # name of the column where consumption is provided
 
-price_file_path: .price.csv      # file path where prices are stored as .csv
-price_value_column: price                           # name of the column where prices are provided
+price_file_path:       # file path where prices are stored as .csv
+price_value_column:                            # name of the column where prices are provided
 
-postal_code:    # postal code for automtic pv generation calculation, leave empty for own timeseries
-# if not provided, pv generation will be calculated with the following parameters
 # value column needs to contain values from 0 (no pv generation) to 1 (max pv generation)
 new_pv_file_path: # file path where pv generation is stored as .csv
 new_pv_value_column:                                   # name of the column where pv generation is provided
@@ -71,7 +81,6 @@ inverter_cost_per_kw: 180   # storage inverter cost in euro per kw
 # taken from:
 # https://www.sciencedirect.com/science/article/pii/S1876610216310736
 
-
 ########################
 # PV system parameters #
 ########################
@@ -89,7 +98,7 @@ max_pv_system_size_kwp:   # maximum available pv system size in kWpeak (leave em
 #######################
 # economic parameters #
 #######################
-overwrite_price_timeseries: False         # Wether to overwrite price timeseries or not
+overwrite_price_timeseries: True         # Wether to overwrite price timeseries or not
 producer_energy_price: 0.15 # €/kWh     # energy price if sourced from supplier
 # value for 2024 taken from:
 # https://www.bdew.de/service/daten-und-grafiken/bdew-strompreisanalyse/
