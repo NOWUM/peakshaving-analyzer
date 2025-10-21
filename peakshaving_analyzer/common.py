@@ -35,7 +35,9 @@ class IOHandler:
         with open(path, "w") as f:
             yaml.safe_dump(self.to_dict(include_timeseries=False), f, sort_keys=False)
 
-    def _plot(self, cols_to_plot: list[str] | None = None):
+    def _plot(
+        self, cols_to_plot: list[str] | None = None, xaxis_title: str | None = None, yaxis_title: str | None = None
+    ):
         ts_df = self.timeseries_to_df()
 
         if "timestamp" in ts_df.columns:
@@ -49,6 +51,7 @@ class IOHandler:
             cols_to_plot = ts_df.columns.tolist()
 
         fig = px.line(ts_df, x=x, y=cols_to_plot)
+        fig.update_layout(xaxis_title=xaxis_title, yaxis_title=yaxis_title)
         fig.show()
 
     def plot_timeseries(self):
