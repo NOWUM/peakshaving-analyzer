@@ -53,7 +53,7 @@ dev = [
 psa = "psa_cli.main:cli"
 
 [project.urls]
-Issues = "https://github.com/assume-framework/assume/issues"
+Issues = "https://github.com/NOWUM/peakshaving_analyzer/issues"
 Repository = "https://github.com/NOWUM/peakshaving-analyzer"
 
 [tool.setuptools.packages.find]
