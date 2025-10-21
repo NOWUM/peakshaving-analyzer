@@ -4,6 +4,7 @@ from pathlib import Path
 
 import fine as fn
 import pandas as pd
+import plotly.graph_objects as go
 import sqlalchemy
 
 from peakshaving_analyzer import Config
@@ -97,8 +98,46 @@ class Results(IOHandler):
             df.to_sql(name=timeseries_table_name, schema=schema, con=connection, if_exists="append", index=False)
 
     def plot_storage_timeseries(self):
-        storage_columns = ["storage_charge_kw", "storage_discharge_kw", "storage_soc_kwh"]
-        self._plot(cols_to_plot=storage_columns)
+        fig = go.Figure()
+
+        ts_df = self.timeseries_to_df()
+        if "timestamp" in ts_df.columns:
+            x = ts_df["timestamp"]
+        elif "datetime" in ts_df.columns:
+            x = ts_df["datetime"]
+        else:
+            x = ts_df.index
+
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=ts_df["storage_charge_kw"],
+                name="Storage charge (kW)",
+                mode="lines",
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=ts_df["storage_discharge_kw"],
+                name="Storage discharge (kW)",
+                mode="lines",
+            )
+        )
+
+        fig.add_trace(go.Scatter(x=x, y=ts_df["storage_soc_kwh"], name="Storage SOC (kWh)", mode="lines", yaxis="y2"))
+
+        # Layout anpassen
+        fig.update_layout(
+            title="Charge / Discharge (kW) und SOC (kWh)",
+            yaxis=dict(
+                title="Charge / Discharge (kW)",
+            ),
+            yaxis2=dict(title="SOC (kWh)", overlaying="y", side="right"),
+            template="plotly_white",
+        )
+
+        fig.show()
 
     def plot_consumption_timeseries(self):
         consumption_columns = [
@@ -108,7 +147,7 @@ class Results(IOHandler):
             "new_pv_generation_kw",
             "consumption_kw",
         ]
-        self._plot(cols_to_plot=consumption_columns)
+        self._plot(cols_to_plot=consumption_columns, yaxis_title="Power in kW")
 
 
 def create_results(config: Config, esm: fn.EnergySystemModel) -> Results:

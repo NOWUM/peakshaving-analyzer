@@ -65,6 +65,9 @@ inverter_cost_per_kw: 180   # storage inverter cost in euro per kw
 # taken from:
 # https://www.sciencedirect.com/science/article/pii/S1876610216310736
 
+max_inverter_charge_kw:  # max charge power in kW
+max_inverter_discharge_kw:  # max discharge power in kW
+
 #################################
 # Existing PV system parameters #
 #################################

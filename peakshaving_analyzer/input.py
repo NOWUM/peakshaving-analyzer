@@ -98,15 +98,15 @@ def load_yaml_config(config_file_path: Path | str, test_mode: bool = False) -> C
     # set config dir var
     data["config_dir"] = config_path.parent
 
+    _check_minimum_inputs(data)
+
     # read in consumption timeseries
-    data["consumption_timeseries"] = pd.read_csv(data["config_dir"] / data["consumption_file_path"])[
-        data["consumption_value_column"]
-    ]
+    data["consumption_timeseries"] = pd.read_csv(data["consumption_file_path"])[data["consumption_value_column"]]
     log.info("Consumption timeseries loaded")
 
     # read in timestamps if provided
     if data.get("timestamp_column"):
-        data["timestamps"] = pd.read_csv(data["config_dir"] / data["consumption_file_path"])[data["timestamp_column"]]
+        data["timestamps"] = pd.to_datetime(pd.read_csv(data["consumption_file_path"])[data["timestamp_column"]])
         log.info("Timestamps loaded")
     else:
         data["timestamps"] = None
@@ -241,9 +241,47 @@ def load_oeds_config(
     return Config(**data)
 
 
+def _check_minimum_inputs(data):
+    if data.get("consumption_file_path") is None:
+        raise ValueError("Please provide a consumption file path!")
+
+    if data.get("hours_per_timestep") is None:
+        raise ValueError("Please provide hours per timestep!")
+
+    if data.get("producer_energy_price") is None and data.get("price_file_path") is None:
+        raise ValueError("Please provide either producer energy price or price timeseries!")
+
+    if (
+        data.get("pv_system_already_exists")
+        and data.get("existing_pv_file_path") is None
+        and (data.get("postal_code") is None or data.get("existing_pv_size_kwp") is None)
+    ):
+        msg = "When including already existing PV system, you need to provide either the generation timeseries (existing pv file path"
+        msg += " or your postal code and the existing PV system size in kWpeak!"
+        raise ValueError(msg)
+
+    if (
+        data.get("allow_additional_pv")
+        and not data.get("pv_system_already_exists")
+        and data.get("new_pv_file_path") is None
+        and data.get("postal_code") is None
+    ):
+        msg = "When including a new PV system (without an existing one), you need to provide either the generation timeseries (new pv file path)"
+        msg += " or your postal code!"
+        raise ValueError(msg)
+
+    if data.get("grid_capacity_price") is None:
+        msg = "Please provide a grid capacity price. If you don't wish to model grid capacity price, set price to 0."
+        raise ValueError(msg)
+
+    if data.get("grid_energy_price") is None:
+        msg = "Please provide a grid energy price. If you don't wish to model grid energy price, set price to 0."
+        raise ValueError(msg)
+
+
 def _create_timeseries_metadata(data):
     # if no timestamps are given, we create them
-    if not data.get("timestamps", None):
+    if data.get("timestamps", None) is None:
         data["n_timesteps"] = len(data["consumption_timeseries"])
         data["leap_year"] = _detect_leap_year(data)
         data["assumed_year"] = _assume_year(data)
@@ -256,8 +294,10 @@ def _create_timeseries_metadata(data):
     # otherwise we just create the metadata from the timestamps
     else:
         data["n_timesteps"] = len(data["timestamps"])
-        data["leap_year"] = calendar.isleap(data["timestamps"][0].year)
-        data["assumed_year"] = data["timestamps"][0].year
+
+        timestep_to_use = data["timestamps"][len(data["timestamps"]) // 2]
+        data["leap_year"] = calendar.isleap(timestep_to_use.year)
+        data["assumed_year"] = timestep_to_use.year
 
 
 def _detect_leap_year(data):
@@ -360,7 +400,7 @@ def _read_price_timeseries(data):
         pd.Series: The price timeseries.
     """
     log.info("Reading price timeseries from CSV file.")
-    df = pd.read_csv(data["config_dir"] / data["price_file_path"])
+    df = pd.read_csv(data["price_file_path"])
     df.rename(
         columns={data.get("price_value_column", "value"): "grid"},
         inplace=True,
@@ -384,9 +424,7 @@ def _load_pv_timeseries(data):
     if data.get("pv_system_already_exists"):
         # load from CSV if provided
         if data.get("existing_pv_file_path"):
-            pv_gen = pd.read_csv(data["config_dir"] / data["existing_pv_file_path"])[
-                data.get("existing_pv_value_column", "value")
-            ]
+            pv_gen = pd.read_csv(data["existing_pv_file_path"])[data.get("existing_pv_value_column", "value")]
             pv_gen.rename("consumption_site", inplace=True)
             data["existing_pv_size_kwp"] = pv_gen.max()  # set existing system size
             pv_gen = pv_gen / pv_gen.max()  # scale to values from 0 to 1
@@ -412,9 +450,7 @@ def _load_pv_timeseries(data):
     if data.get("allow_additional_pv"):
         # load from csv if provided
         if data.get("new_pv_file_path"):
-            pv_gen = pd.read_csv(data["config_dir"] / data["new_pv_file_path"])[
-                data.get("new_pv_value_column", "value")
-            ]
+            pv_gen = pd.read_csv(data["new_pv_file_path"])[data.get("new_pv_value_column", "value")]
             pv_gen.rename("consumption_site", inplace=True)
             log.info("existing pv generation timeseries loaded")
 

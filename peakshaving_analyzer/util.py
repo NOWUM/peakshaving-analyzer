@@ -1,0 +1,47 @@
+import yaml
+
+
+def create_default_yaml():
+    data = {
+        "name": "example_optimization",
+        "hours_per_timestep": 0.25,
+        "add_storage": True,
+        "allow_additional_pv": False,
+        "auto_opt": False,
+        "solver": "gurobi",
+        "verbose": True,
+        "timestamp_column": None,
+        "consumption_file_path": None,
+        "consumption_value_column": None,
+        "price_file_path": None,
+        "price_value_column": None,
+        "storage_lifetime": 15,
+        "storage_cost_per_kwh": 145,
+        "max_storage_size_kwh": None,
+        "storage_charge_efficiency": 0.9,
+        "storage_discharge_efficiency": 0.9,
+        "storage_charge_rate": 1,
+        "storage_discharge_rate": 1,
+        "inverter_efficiency": 0.95,
+        "inverter_lifetime": 15,
+        "inverter_cost_per_kw": 180,
+        "max_inverter_charge_kw": None,
+        "max_inverter_discharge_kw": None,
+        "pv_system_already_exists": False,
+        "existing_pv_file_path": None,
+        "existing_pv_column": None,
+        "existing_pv_size_kwp": None,
+        "postal_code": None,
+        "pv_system_lifetime": 30,
+        "pv_system_cost_per_kwp": 1250,
+        "pv_system_kwp_per_m2": 0.4,
+        "max_pv_system_size_kwp": None,
+        "new_pv_file_path": None,
+        "new_pv_value_column": None,
+        "overwrite_price_timeseries": True,
+        "producer_energy_price": 0.1665,
+        "grid_capacity_price": 101.22,
+        "grid_energy_price": 0.0460,
+    }
+    with open("config.yaml", "w") as f:
+        yaml.dump(data, f, sort_keys=False, default_flow_style=False)
