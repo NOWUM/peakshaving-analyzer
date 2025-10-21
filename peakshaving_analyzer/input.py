@@ -99,14 +99,12 @@ def load_yaml_config(config_file_path: Path | str, test_mode: bool = False) -> C
     data["config_dir"] = config_path.parent
 
     # read in consumption timeseries
-    data["consumption_timeseries"] = pd.read_csv(data["config_dir"] / data["consumption_file_path"])[
-        data["consumption_value_column"]
-    ]
+    data["consumption_timeseries"] = pd.read_csv(data["consumption_file_path"])[data["consumption_value_column"]]
     log.info("Consumption timeseries loaded")
 
     # read in timestamps if provided
     if data.get("timestamp_column"):
-        data["timestamps"] = pd.read_csv(data["config_dir"] / data["consumption_file_path"])[data["timestamp_column"]]
+        data["timestamps"] = pd.read_csv(data["consumption_file_path"])[data["timestamp_column"]]
         log.info("Timestamps loaded")
     else:
         data["timestamps"] = None
@@ -360,7 +358,7 @@ def _read_price_timeseries(data):
         pd.Series: The price timeseries.
     """
     log.info("Reading price timeseries from CSV file.")
-    df = pd.read_csv(data["config_dir"] / data["price_file_path"])
+    df = pd.read_csv(data["price_file_path"])
     df.rename(
         columns={data.get("price_value_column", "value"): "grid"},
         inplace=True,
@@ -384,9 +382,7 @@ def _load_pv_timeseries(data):
     if data.get("pv_system_already_exists"):
         # load from CSV if provided
         if data.get("existing_pv_file_path"):
-            pv_gen = pd.read_csv(data["config_dir"] / data["existing_pv_file_path"])[
-                data.get("existing_pv_value_column", "value")
-            ]
+            pv_gen = pd.read_csv(data["existing_pv_file_path"])[data.get("existing_pv_value_column", "value")]
             pv_gen.rename("consumption_site", inplace=True)
             data["existing_pv_size_kwp"] = pv_gen.max()  # set existing system size
             pv_gen = pv_gen / pv_gen.max()  # scale to values from 0 to 1
@@ -412,9 +408,7 @@ def _load_pv_timeseries(data):
     if data.get("allow_additional_pv"):
         # load from csv if provided
         if data.get("new_pv_file_path"):
-            pv_gen = pd.read_csv(data["config_dir"] / data["new_pv_file_path"])[
-                data.get("new_pv_value_column", "value")
-            ]
+            pv_gen = pd.read_csv(data["new_pv_file_path"])[data.get("new_pv_value_column", "value")]
             pv_gen.rename("consumption_site", inplace=True)
             log.info("existing pv generation timeseries loaded")
 
