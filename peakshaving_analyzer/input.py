@@ -104,7 +104,7 @@ def load_yaml_config(config_file_path: Path | str, test_mode: bool = False) -> C
 
     # read in timestamps if provided
     if data.get("timestamp_column"):
-        data["timestamps"] = pd.read_csv(data["consumption_file_path"])[data["timestamp_column"]]
+        data["timestamps"] = pd.to_datetime(pd.read_csv(data["consumption_file_path"])[data["timestamp_column"]])
         log.info("Timestamps loaded")
     else:
         data["timestamps"] = None
@@ -241,7 +241,7 @@ def load_oeds_config(
 
 def _create_timeseries_metadata(data):
     # if no timestamps are given, we create them
-    if data.get("timestamps", None) is not None:
+    if data.get("timestamps", None) is None:
         data["n_timesteps"] = len(data["consumption_timeseries"])
         data["leap_year"] = _detect_leap_year(data)
         data["assumed_year"] = _assume_year(data)
@@ -253,9 +253,11 @@ def _create_timeseries_metadata(data):
         )
     # otherwise we just create the metadata from the timestamps
     else:
-        data["n_timesteps"] = len(data["consumption_timeseries"])
-        data["leap_year"] = calendar.isleap(data["timestamps"][0].year)
-        data["assumed_year"] = data["timestamps"][0].year
+        data["n_timesteps"] = len(data["timestamps"])
+
+        timestep_to_use = data["timestamps"][len(data["timestamps"]) // 2]
+        data["leap_year"] = calendar.isleap(timestep_to_use.year)
+        data["assumed_year"] = timestep_to_use.year
 
 
 def _detect_leap_year(data):
