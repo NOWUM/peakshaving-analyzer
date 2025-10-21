@@ -253,7 +253,7 @@ def _create_timeseries_metadata(data):
         )
     # otherwise we just create the metadata from the timestamps
     else:
-        data["n_timesteps"] = len(data["timestamps"])
+        data["n_timesteps"] = len(data["consumption_timeseries"])
         data["leap_year"] = calendar.isleap(data["timestamps"][0].year)
         data["assumed_year"] = data["timestamps"][0].year
 
