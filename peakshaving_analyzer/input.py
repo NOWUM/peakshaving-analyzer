@@ -98,6 +98,8 @@ def load_yaml_config(config_file_path: Path | str, test_mode: bool = False) -> C
     # set config dir var
     data["config_dir"] = config_path.parent
 
+    _check_minimum_inputs(data)
+
     # read in consumption timeseries
     data["consumption_timeseries"] = pd.read_csv(data["consumption_file_path"])[data["consumption_value_column"]]
     log.info("Consumption timeseries loaded")
@@ -237,6 +239,44 @@ def load_oeds_config(
     _remove_unused_keys(data)
 
     return Config(**data)
+
+
+def _check_minimum_inputs(data):
+    if data.get("consumption_file_path") is None:
+        raise ValueError("Please provide a consumption file path!")
+
+    if data.get("hours_per_timestep") is None:
+        raise ValueError("Please provide hours per timestep!")
+
+    if data.get("producer_energy_price") is None and data.get("price_file_path") is None:
+        raise ValueError("Please provide either producer energy price or price timeseries!")
+
+    if (
+        data.get("pv_system_already_exists")
+        and data.get("existing_pv_file_path") is None
+        and (data.get("postal_code") is None or data.get("existing_pv_size_kwp") is None)
+    ):
+        msg = "When including already existing PV system, you need to provide either the generation timeseries (existing pv file path"
+        msg += " or your postal code and the existing PV system size in kWpeak!"
+        raise ValueError(msg)
+
+    if (
+        data.get("allow_additional_pv")
+        and not data.get("pv_system_already_exists")
+        and data.get("new_pv_file_path") is None
+        and data.get("postal_code") is None
+    ):
+        msg = "When including a new PV system (without an existing one), you need to provide either the generation timeseries (new pv file path)"
+        msg += " or your postal code!"
+        raise ValueError(msg)
+
+    if data.get("grid_capacity_price") is None:
+        msg = "Please provide a grid capacity price. If you don't wish to model grid capacity price, set price to 0."
+        raise ValueError(msg)
+
+    if data.get("grid_energy_price") is None:
+        msg = "Please provide a grid energy price. If you don't wish to model grid energy price, set price to 0."
+        raise ValueError(msg)
 
 
 def _create_timeseries_metadata(data):
