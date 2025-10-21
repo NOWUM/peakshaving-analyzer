@@ -38,10 +38,17 @@ class IOHandler:
     def _plot(self, cols_to_plot: list[str] | None = None):
         ts_df = self.timeseries_to_df()
 
+        if "timestamp" in ts_df.columns:
+            x = ts_df["timestamp"]
+        elif "datetime" in ts_df.columns:
+            x = ts_df["datetime"]
+        else:
+            x = ts_df.index
+
         if not cols_to_plot:
             cols_to_plot = ts_df.columns.tolist()
 
-        fig = px.line(ts_df, x=ts_df.index, y=cols_to_plot)
+        fig = px.line(ts_df, x=x, y=cols_to_plot)
         fig.show()
 
     def plot_timeseries(self):
