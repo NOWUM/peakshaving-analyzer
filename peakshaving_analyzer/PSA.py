@@ -141,6 +141,10 @@ class PeakShavingAnalyzer:
         )
 
     def add_storage(self):
+        if self.config.max_inverter_charge:
+            max_cap = pd.Series([self.config.max_inverter_charge, 0], index=["consumption_site", "grid"])
+        else:
+            max_cap = None
         self.esm.add(
             fn.Conversion(
                 esM=self.esm,
@@ -151,7 +155,7 @@ class PeakShavingAnalyzer:
                     "stored_energy": self.config.inverter_efficiency,
                 },
                 hasCapacityVariable=True,
-                capacityMax=pd.Series([self.config.max_inverter_charge, 0], index=["consumption_site", "grid"]),
+                capacityMax=max_cap,
                 investPerCapacity=0,
                 linkedConversionCapacityID="storage",
                 interestRate=self.config.interest_rate / 100,
@@ -183,6 +187,10 @@ class PeakShavingAnalyzer:
             )
         )
 
+        if self.config.max_inverter_discharge:
+            max_cap = pd.Series([self.config.max_inverter_discharge, 0], index=["consumption_site", "grid"])
+        else:
+            max_cap = None
         self.esm.add(
             fn.Conversion(
                 esM=self.esm,
@@ -190,7 +198,7 @@ class PeakShavingAnalyzer:
                 physicalUnit="kWh",
                 commodityConversionFactors={"stored_energy": -1, "energy": 1},
                 hasCapacityVariable=True,
-                capacityMax=pd.Series([self.config.max_inverter_discharge, 0], index=["consumption_site", "grid"]),
+                capacityMax=max_cap,
                 investPerCapacity=self.config.inverter_cost_per_kw,
                 economicLifetime=self.config.inverter_lifetime,
                 technicalLifetime=self.config.inverter_lifetime,

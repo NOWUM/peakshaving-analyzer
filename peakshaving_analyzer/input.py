@@ -46,6 +46,8 @@ class Config(IOHandler):
     inverter_efficiency: float = 0.95
     inverter_cost_per_kw: float = 180
     inverter_lifetime: int = 15
+    max_inverter_charge: float | None = None
+    max_inverter_discharge: float | None = None
 
     # Existing PV system parameters
     pv_system_already_exists: bool = False
