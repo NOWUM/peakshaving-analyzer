@@ -7,7 +7,7 @@ name = "peakshaving-analyzer"
 version = "0.1.10"
 description = "Peak shaving analysis for industrial load profiles"
 authors = [
-    { name = "Christoph Komanns", email = "c.komanns@gmail.com" },
+    { name = "Christoph Komanns", email = "c.komanns@proton.me" },
     { name = "Florian Maurer", email = "fmaurer@disroot.org" }]
 readme = "README.md"
 license = "MIT"
