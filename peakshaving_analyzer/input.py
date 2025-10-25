@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 import pgeocode
+import plotly.express as px
 import requests
 import sqlalchemy
 import yaml
@@ -81,6 +82,20 @@ class Config(IOHandler):
         df["new_pv_generation_kw"] = self.new_pv_generation_timeseries["consumption_site"]
 
         return df
+
+
+    def plot_load_duration_curve(self):
+        ts_df = self.timeseries_to_df()
+
+        fig = px.line(
+            data_frame=ts_df.sort_values("consumption_kw", ascending=False, ignore_index=True),
+            x=ts_df.index,
+            y="consumption_kw",
+            title="Load duration curve",
+        )
+        fig.update_layout(xaxis_title="Number of times", yaxis_title="Load in kW")
+
+        fig.show()
 
 
 def load_yaml_config(config_file_path: Path | str, test_mode: bool = False) -> Config:
