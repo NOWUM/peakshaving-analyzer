@@ -8,9 +8,11 @@ from pathlib import Path
 import pandas as pd
 import pgeocode
 import plotly.express as px
+import plotly.graph_objects as go
 import requests
 import sqlalchemy
 import yaml
+from statsmodels.tsa import seasonal
 
 from peakshaving_analyzer.common import IOHandler
 
@@ -95,6 +97,53 @@ class Config(IOHandler):
             title="Load duration curve",
         )
         fig.update_layout(xaxis_title="Number of times", yaxis_title="Load in kW")
+
+        fig.show()
+
+    def plot_load_histogram(self):
+        ts_df = self.timeseries_to_df()
+
+        fig = px.histogram(data_frame=ts_df, x="consumption_kw", title="Histogram of load")
+        fig.update_layout(xaxis_title="Load in kW")
+
+        fig.show()
+
+    def plot_load_box(self):
+        ts_df = self.timeseries_to_df()
+
+        fig = px.box(
+            data_frame=ts_df,
+            x="consumption_kw",
+            title="Boxplot of load",
+        )
+        fig.update_layout(xaxis_title="Load in kW")
+
+        fig.show()
+
+    def seasonal_decompose(self) -> seasonal.DecomposeResult:
+        ts_df = self.timeseries_to_df()
+        ts_df.index = self.timestamps.copy()
+
+        decompose_result = seasonal.seasonal_decompose(x=ts_df["consumption_kw"])
+
+        return decompose_result
+
+    def plot_seasonal_decompose(self):
+        decompose_result = self.seasonal_decompose()
+
+        fig = go.Figure()
+        for var in ["seasonal", "trend", "resid"]:
+            fig.add_scatter(
+                x=self.timestamps,
+                y=getattr(decompose_result, var),
+                name=var,
+            )
+
+        fig.update_layout(
+            title="Seasonal decomposition",
+            xaxis_title="Time",
+            yaxis_title="Load in kW",
+        )
 
         fig.show()
 
