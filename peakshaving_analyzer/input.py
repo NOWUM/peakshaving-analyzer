@@ -79,10 +79,11 @@ class Config(IOHandler):
 
         df["consumption_kw"] = self.consumption_timeseries
         df["energy_price_eur"] = self.price_timeseries["grid"]
-        df["new_pv_generation_kw"] = self.new_pv_generation_timeseries["consumption_site"]
+
+        if self.new_pv_generation_timeseries is not None:
+            df["new_pv_generation_kw"] = self.new_pv_generation_timeseries["consumption_site"]
 
         return df
-
 
     def plot_load_duration_curve(self):
         ts_df = self.timeseries_to_df()
