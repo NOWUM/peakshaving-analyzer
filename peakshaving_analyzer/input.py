@@ -87,6 +87,12 @@ class Config(IOHandler):
 
         return df
 
+    def plot_analysis(self):
+        self.plot_load_box()
+        self.plot_load_histogram()
+        self.plot_load_duration_curve()
+        self.plot_seasonal_decompose()
+
     def plot_load_duration_curve(self):
         ts_df = self.timeseries_to_df()
 
