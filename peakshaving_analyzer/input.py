@@ -87,6 +87,30 @@ class Config(IOHandler):
 
         return df
 
+    def calculate_statistics(self, print: bool = False) -> dict[str, float]:
+        ts_df = self.timeseries_to_df()
+        stats = {}
+
+        stats["min_load_kw"] = ts_df["consumption_kw"].min()
+        stats["max_load_kw"] = ts_df["consumption_kw"].max()
+        stats["mean_load_kw"] = ts_df["consumption_kw"].mean()
+        stats["median_load_kw"] = ts_df["consumption_kw"].median()
+        stats["variance"] = ts_df["consumption_kw"].var()
+        stats["std"] = ts_df["consumption_kw"].std()
+        stats["total_consumption_kwh"] = ts_df["consumption_kw"].sum() * self.hours_per_timestep
+
+        if print:
+            for key, value in stats.items():
+                print(f"{key}: {value}")
+
+        return stats
+
+    def plot_analysis(self):
+        self.plot_load_box()
+        self.plot_load_histogram()
+        self.plot_load_duration_curve()
+        self.plot_seasonal_decompose()
+
     def plot_load_duration_curve(self):
         ts_df = self.timeseries_to_df()
 

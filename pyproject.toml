@@ -37,6 +37,7 @@ dependencies = [
     "fine >=2.4.1",
     "pyomo >=6.8.0",
     "pgeocode >=0.5.0",
+    "statsmodels >=0.14.5",
     "highspy",
     "gurobipy",
     "argcomplete",
