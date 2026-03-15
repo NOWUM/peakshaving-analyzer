@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 import fine as fn
 import numpy as np
@@ -223,6 +224,9 @@ class PeakShavingAnalyzer:
         log.info("Optimizing. Depending on the given parameters and your setup, this may take a while.")
 
         self.esm.optimize(solver=solver, declaresOptimizationProblem=False)
+
+        if not self.config.optimization_id:
+            self.config.optimization_id = str(uuid.uuid4())
 
         results = create_results(self.config, self.esm)
 

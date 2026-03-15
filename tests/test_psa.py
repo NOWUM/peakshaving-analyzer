@@ -1,3 +1,4 @@
+import uuid
 from math import isclose
 
 import pandas as pd
@@ -28,6 +29,36 @@ def test_charge_from_grid():
         results.total_yearly_costs_eur
         == results.energy_costs_eur + results.grid_energy_costs_eur + results.grid_capacity_costs_eur
     )
+
+
+def test_optimization_id_auto_generated():
+    config = Config(
+        "test_config",
+        consumption_timeseries=[1, 1],
+        hours_per_timestep=1,
+        n_timesteps=2,
+        price_timeseries=pd.DataFrame({"grid": [0.3, 0.3], "consumption_site": [0, 0]}),
+    )
+    psa = PeakShavingAnalyzer(config=config)
+    results = psa.optimize()
+
+    assert results.optimization_id is not None
+    uuid.UUID(results.optimization_id)  # raises if invalid
+
+
+def test_optimization_id_preserved_when_provided():
+    config = Config(
+        "test_config",
+        optimization_id="fixed-test-id",
+        consumption_timeseries=[1, 1],
+        hours_per_timestep=1,
+        n_timesteps=2,
+        price_timeseries=pd.DataFrame({"grid": [0.3, 0.3], "consumption_site": [0, 0]}),
+    )
+    psa = PeakShavingAnalyzer(config=config)
+    results = psa.optimize()
+
+    assert results.optimization_id == "fixed-test-id"
 
 
 @pytest.mark.parametrize("n_timesteps", [1, 2, 50, 100])

@@ -57,6 +57,9 @@ class Config(IOHandler):
     grid_energy_price: float = 0.046
     interest_rate: float = 2
 
+    # optional optimization metadata
+    optimization_id: str | None = None
+
     # metadata needed for optimization (set by peakshaving analyzer)
     timestamps: pd.DatetimeIndex | None = None
     n_timesteps: int | None = None
