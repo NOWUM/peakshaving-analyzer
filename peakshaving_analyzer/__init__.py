@@ -18,4 +18,4 @@ __all__ = [
     "load_oeds_config",
     "create_default_yaml",
 ]
-__version__ = "0.1.10"
+__version__ = "0.1.11"
