@@ -1,4 +1,5 @@
 import logging
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -15,6 +16,9 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class Results(IOHandler):
+    # id for optimization (uuid4 or user-provided)
+    optimization_id: str
+
     # general parameters
     name: str
 
@@ -95,6 +99,7 @@ class Results(IOHandler):
         if include_timeseries:
             df = self.timeseries_to_df()
             df["name"] = self.name
+            df["optimization_id"] = self.optimization_id
             df.to_sql(name=timeseries_table_name, schema=schema, con=connection, if_exists="append", index=False)
 
     def plot_storage_timeseries(self):
@@ -151,7 +156,11 @@ class Results(IOHandler):
 
 
 def create_results(config: Config, esm: fn.EnergySystemModel) -> Results:
+    if not config.optimization_id:
+        config.optimization_id = str(uuid.uuid4())
+
     data = {}
+    data["optimization_id"] = config.optimization_id
     data["name"] = config.name
     data["timestamps"] = config.timestamps
 

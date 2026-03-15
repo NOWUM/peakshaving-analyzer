@@ -1,10 +1,11 @@
 import logging
+import uuid
 
 import fine as fn
 import numpy as np
 import pandas as pd
 
-from peakshaving_analyzer.input import Config
+from peakshaving_analyzer.config import Config
 from peakshaving_analyzer.output import Results, create_results
 
 log = logging.getLogger(__name__)
@@ -223,6 +224,9 @@ class PeakShavingAnalyzer:
         log.info("Optimizing. Depending on the given parameters and your setup, this may take a while.")
 
         self.esm.optimize(solver=solver, declaresOptimizationProblem=False)
+
+        if not self.config.optimization_id:
+            self.config.optimization_id = str(uuid.uuid4())
 
         results = create_results(self.config, self.esm)
 

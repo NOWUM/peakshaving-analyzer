@@ -1,175 +1,18 @@
 import calendar
 import logging
-from dataclasses import dataclass
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
 import pgeocode
-import plotly.express as px
-import plotly.graph_objects as go
 import requests
 import sqlalchemy
 import yaml
-from statsmodels.tsa import seasonal
 
-from peakshaving_analyzer.common import IOHandler
+from peakshaving_analyzer.config import Config
 
 log = logging.getLogger(__name__)
-
-
-@dataclass
-class Config(IOHandler):
-    # general parameters
-    name: str
-    overwrite_existing_optimization: bool = False
-    add_storage: bool = True
-    allow_additional_pv: bool = False
-    auto_opt: bool = False
-    solver: str = "appsi_highs"
-    verbose: bool = False
-    postal_code: int | str | None = None
-
-    # general timeseries
-    consumption_timeseries: pd.Series | None = None
-    price_timeseries: pd.Series | None = None
-
-    # storage system (battery) parameters
-    storage_lifetime: int = 15
-    storage_cost_per_kwh: float = 285
-    storage_charge_efficiency: float = 0.95
-    storage_discharge_efficiency: float = 0.95
-    storage_charge_rate: float = 5
-    storage_cyclic_lifetime: float = 10000
-    storage_discharge_rate: float = 5
-    max_storage_size_kwh: float | None = None
-
-    # storage system (inverter) parameters
-    inverter_efficiency: float = 0.95
-    inverter_cost_per_kw: float = 180
-    inverter_lifetime: int = 15
-    max_inverter_charge: float | None = None
-    max_inverter_discharge: float | None = None
-
-    # Existing PV system parameters
-    pv_system_already_exists: bool = False
-    existing_pv_size_kwp: float | None = None
-    existing_pv_generation_timeseries: pd.Series | None = None
-
-    # New PV system parameters
-    pv_system_lifetime: int = 30
-    pv_system_cost_per_kwp: float = 1200.0
-    max_pv_system_size_kwp: float | None = None
-    pv_system_kwp_per_m2: float = 0.4
-    new_pv_generation_timeseries: pd.Series | None = None
-
-    # economic parameters
-    overwrite_price_timeseries: bool = False
-    producer_energy_price: float = 0.1665
-    grid_capacity_price: float = 101.22
-    grid_energy_price: float = 0.046
-    interest_rate: float = 2
-
-    # metadata needed for optimization (set by peakshaving analyzer)
-    timestamps: pd.DatetimeIndex | None = None
-    n_timesteps: int | None = None
-    hours_per_timestep: float | None = None
-
-    def timeseries_to_df(self):
-        df = pd.DataFrame()
-
-        df["consumption_kw"] = self.consumption_timeseries
-        df["energy_price_eur"] = self.price_timeseries["grid"]
-
-        if self.new_pv_generation_timeseries is not None:
-            df["new_pv_generation_kw"] = self.new_pv_generation_timeseries["consumption_site"]
-
-        return df
-
-    def calculate_statistics(self, print: bool = False) -> dict[str, float]:
-        ts_df = self.timeseries_to_df()
-        stats = {}
-
-        stats["min_load_kw"] = ts_df["consumption_kw"].min()
-        stats["max_load_kw"] = ts_df["consumption_kw"].max()
-        stats["mean_load_kw"] = ts_df["consumption_kw"].mean()
-        stats["median_load_kw"] = ts_df["consumption_kw"].median()
-        stats["variance"] = ts_df["consumption_kw"].var()
-        stats["std"] = ts_df["consumption_kw"].std()
-        stats["total_consumption_kwh"] = ts_df["consumption_kw"].sum() * self.hours_per_timestep
-
-        if print:
-            for key, value in stats.items():
-                print(f"{key}: {value}")
-
-        return stats
-
-    def plot_analysis(self):
-        self.plot_load_box()
-        self.plot_load_histogram()
-        self.plot_load_duration_curve()
-        self.plot_seasonal_decompose()
-
-    def plot_load_duration_curve(self):
-        ts_df = self.timeseries_to_df()
-
-        fig = px.line(
-            data_frame=ts_df.sort_values("consumption_kw", ascending=False, ignore_index=True),
-            x=ts_df.index,
-            y="consumption_kw",
-            title="Load duration curve",
-        )
-        fig.update_layout(xaxis_title="Number of times", yaxis_title="Load in kW")
-
-        fig.show()
-
-    def plot_load_histogram(self):
-        ts_df = self.timeseries_to_df()
-
-        fig = px.histogram(data_frame=ts_df, x="consumption_kw", title="Histogram of load")
-        fig.update_layout(xaxis_title="Load in kW")
-
-        fig.show()
-
-    def plot_load_box(self):
-        ts_df = self.timeseries_to_df()
-
-        fig = px.box(
-            data_frame=ts_df,
-            x="consumption_kw",
-            title="Boxplot of load",
-        )
-        fig.update_layout(xaxis_title="Load in kW")
-
-        fig.show()
-
-    def seasonal_decompose(self) -> seasonal.DecomposeResult:
-        ts_df = self.timeseries_to_df()
-        ts_df.index = self.timestamps.copy()
-
-        decompose_result = seasonal.seasonal_decompose(x=ts_df["consumption_kw"])
-
-        return decompose_result
-
-    def plot_seasonal_decompose(self):
-        decompose_result = self.seasonal_decompose()
-
-        fig = go.Figure()
-        for var in ["seasonal", "trend", "resid"]:
-            fig.add_scatter(
-                x=self.timestamps,
-                y=getattr(decompose_result, var),
-                name=var,
-            )
-
-        fig.update_layout(
-            title="Seasonal decomposition",
-            xaxis_title="Time",
-            yaxis_title="Load in kW",
-        )
-
-        fig.show()
 
 
 def load_yaml_config(config_file_path: Path | str, test_mode: bool = False) -> Config:
@@ -231,28 +74,6 @@ def load_oeds_config(
     *args,
     **kwargs,
 ) -> Config:
-    """
-    Loads a configuration for the Peak Shaving Analyzer from an OEDS (OpenEnergyDataServer).
-
-    This function retrieves consumption and price time series for a given profile ID from the OEDS,
-    applies optional price inflation, and constructs a Config object for optimization.
-
-    Args:
-        con (str or sqlalchemy.engine.Connection): Database connection string or SQLAlchemy connection object.
-        profile_id (int): The profile ID to load from the database.
-        price_inflation_percent (float, optional): Percentage to inflate grid prices. Default is 26.24.
-        use_given_grid_prices (bool, optional): If True, use grid prices from the database. Default is True.
-        producer_energy_price (float, optional): Fixed producer energy price if not using database prices. Default is 0.1665.
-        *args: Additional positional arguments.
-        **kwargs: Additional keyword arguments to override or supplement configuration.
-
-    Returns:
-        Config: A configuration object populated with time series and parameters from the database.
-
-    Raises:
-        ValueError: If required data cannot be loaded from the database.
-    """
-
     data = {}
 
     data.update(kwargs)
