@@ -107,7 +107,7 @@ class PeakShavingAnalyzer:
                 hasCapacityVariable=True,
                 investPerCapacity=self.config.grid_capacity_price,
                 opexPerOperation=self.config.grid_energy_price,
-                interestRate=self.config.interest_rate,
+                interestRate=self.config.interest_rate / 100,
                 economicLifetime=1,
                 technicalLifetime=1,
             )
